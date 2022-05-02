@@ -1,2 +1,5 @@
-(library (name incr_dom_text_input_example_lib) (libraries core incr_dom)
- (preprocess (pps ppx_jane)))
+(library
+ (name hazelnut_lib)
+ (libraries core incr_dom)
+ (preprocess
+  (pps ppx_jane)))
