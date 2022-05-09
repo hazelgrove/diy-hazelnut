@@ -3,24 +3,15 @@ open Incr_dom;
 
 module Model = {
   [@deriving (sexp, fields, compare)]
-  type t = {
-    counter: int,
-    input_text: string,
-    submitted_text: option(string),
-  };
+  type t = {counter: int};
 
-  let set_default_input = (counter, submitted_text) => {
-    counter,
-    input_text: sprintf("Default #%d", counter),
-    submitted_text,
-  };
+  let set_default_input = (counter: int): t => {counter: counter};
 
-  let init = () => set_default_input(0, None);
-  let reset_counter = t => set_default_input(0, t.submitted_text);
-  let incr_counter = t => set_default_input(t.counter + 1, t.submitted_text);
-  let update_input = (t, input_text) => {...t, input_text};
-  let submit_input = t => {...t, submitted_text: Some(t.input_text)};
-  let cutoff = (t1, t2) => compare(t1, t2) == 0;
+  let init = (): t => set_default_input(0);
+  let reset_counter = (_: t): t => set_default_input(0);
+  let incr_counter = (t: t): t => set_default_input(t.counter + 1);
+  let decr_counter = (t: t): t => set_default_input(t.counter - 1);
+  let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
 
 module Action = {
@@ -28,8 +19,7 @@ module Action = {
   type t =
     | Reset_counter
     | Incr_counter
-    | Update_input(string)
-    | Submit_input;
+    | Decr_counter;
 };
 
 module State = {
@@ -40,15 +30,17 @@ let apply_action = (model, action, _, ~schedule_action as _) =>
   switch ((action: Action.t)) {
   | Reset_counter => Model.reset_counter(model)
   | Incr_counter => Model.incr_counter(model)
-  | Update_input(text) => Model.update_input(model, text)
-  | Submit_input => Model.submit_input(model)
+  | Decr_counter => Model.decr_counter(model)
   };
 
 let on_startup = (~schedule_action as _, _) => Async_kernel.return();
 
-let view = (m: Incr.t(Model.t), ~inject) => {
+let view =
+    (m: Incr.t(Model.t), ~inject: Action.t => Ui_effect.t(Base.unit))
+    : Ui_incr.t(Vdom.Node.t) => {
   open Incr.Let_syntax;
   open Vdom;
+
   let button = (label, action) =>
     Node.button(
       ~attr=
@@ -59,38 +51,20 @@ let view = (m: Incr.t(Model.t), ~inject) => {
       [Node.text(label)],
     );
 
-  let submit_button = button("Submit", Action.Submit_input);
-  let reset_button = button("Reset", Action.Reset_counter);
-  let incr_button = button("Increment", Action.Incr_counter);
-  let%map input = {
-    let%map input_text = m >>| Model.input_text;
-    Node.input(
-      ~attr=
-        Attr.many_without_merge([
-          Attr.id("input"),
-          Attr.type_("text"),
-          /* The value property controls the current value of the text input, whereas the
-             value attribute only controls its initial value. */
-          Attr.string_property("value", input_text),
-          /* We must update our model with the user's input to keep the virtual dom consistent
-             with the actual dom. */
-          Attr.on_input((_ev, text) => inject(Action.Update_input(text))),
-        ]),
-      [],
-    );
-  }
-  and submission = {
-    let%map submitted_text = m >>| Model.submitted_text;
-    let text =
-      switch (submitted_text) {
-      | None => "No submissions yet"
-      | Some(text) => "Your latest submission was: " ++ text
-      };
+  let buttons = {
+    let reset_button = button("Reset", Action.Reset_counter);
+    let incr_button = button("+", Action.Incr_counter);
+    let decr_button = button("-", Action.Decr_counter);
 
-    Node.div([Node.text(text)]);
+    Node.div([decr_button, reset_button, incr_button]);
   };
 
-  Node.body([submission, input, submit_button, reset_button, incr_button]);
+  let%map counter = {
+    let%map counter = m >>| Model.counter;
+    Node.div([Node.textf("%d", counter)]);
+  };
+
+  Node.body([counter, buttons]);
 };
 
 let create = (model, ~old_model as _, ~inject) => {
