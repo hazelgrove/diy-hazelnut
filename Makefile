@@ -12,3 +12,6 @@ open:
 
 clean:
 	dune clean
+
+deps:
+	opam install dune reason incr_dom ocaml-lsp-server
