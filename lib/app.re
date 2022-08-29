@@ -1,25 +1,34 @@
 open Core;
 open Incr_dom;
+module Hazelnut = Hazelnut_lib.Hazelnut;
+
+let render_zexp: Hazelnut.zexp => string =
+  fun
+  | Cursor(_) => "Cursor"
+  | Lam(_, _) => "Lam"
+  | LAp(_, _) => "LAp"
+  | RAp(_, _) => "RAp"
+  | LPlus(_, _) => "LPlus"
+  | RPlus(_, _) => "RPlus"
+  | LAsc(_, _) => "LAsc"
+  | RAsc(_, _) => "RAsc"
+  | NEHole(_) => "NEHole";
 
 module Model = {
   [@deriving (sexp, fields, compare)]
-  type t = {counter: int};
+  type t = {e: Hazelnut.zexp};
 
-  let set_default_input = (counter: int): t => {counter: counter};
+  let set_default_expression = (e: Hazelnut.zexp): t => {e: e};
 
-  let init = (): t => set_default_input(0);
-  let reset_counter = (_: t): t => set_default_input(0);
-  let incr_counter = (t: t): t => set_default_input(t.counter + 1);
-  let decr_counter = (t: t): t => set_default_input(t.counter - 1);
+  let init = (): t => set_default_expression(Cursor(EHole));
+  let do_nothing = (e: t): t => e;
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
 
 module Action = {
   [@deriving sexp]
   type t =
-    | Reset_counter
-    | Incr_counter
-    | Decr_counter;
+    | DoNothing;
 };
 
 module State = {
@@ -28,9 +37,7 @@ module State = {
 
 let apply_action = (model, action, _, ~schedule_action as _) =>
   switch ((action: Action.t)) {
-  | Reset_counter => Model.reset_counter(model)
-  | Incr_counter => Model.incr_counter(model)
-  | Decr_counter => Model.decr_counter(model)
+  | DoNothing => Model.do_nothing(model)
   };
 
 let on_startup = (~schedule_action as _, _) => Async_kernel.return();
@@ -52,16 +59,15 @@ let view =
     );
 
   let buttons = {
-    let reset_button = button("Reset", Action.Reset_counter);
-    let incr_button = button("+", Action.Incr_counter);
-    let decr_button = button("-", Action.Decr_counter);
+    let do_nothing_button = button("Do Nothing", Action.DoNothing);
 
-    Node.div([decr_button, reset_button, incr_button]);
+    Node.div([do_nothing_button]);
   };
 
   let%map counter = {
-    let%map counter = m >>| Model.counter;
-    Node.div([Node.textf("%d", counter)]);
+    let%map e = m >>| Model.e;
+    let e = render_zexp(e);
+    Node.div([Node.textf("%s", e)]);
   };
 
   Node.body([counter, buttons]);

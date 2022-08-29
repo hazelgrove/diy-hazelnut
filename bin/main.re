@@ -1,7 +1,7 @@
 open! Core;
 open! Incr_dom;
 open! Js_of_ocaml;
-module App = Hazelnut_lib.App;
+module App = App_lib.App;
 
 Start_app.start(
   (module App),

@@ -1,5 +1,5 @@
 (executables
  (names main)
- (libraries incr_dom hazelnut_lib)
+ (libraries incr_dom app_lib)
  (preprocess
   (pps js_of_ocaml-ppx ppx_jane)))

@@ -1,0 +1,5 @@
+(library
+ (name hazelnut_lib)
+ (libraries core incr_dom)
+ (preprocess
+  (pps ppx_jane)))

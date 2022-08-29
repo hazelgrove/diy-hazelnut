@@ -1,6 +1,6 @@
 open! Core;
 open! Incr_dom_testing;
-module App = Hazelnut_lib.App;
+module App = App_lib.App;
 
 let make_helpers = () => {
   let driver =
