@@ -1,3 +1,9 @@
+open Sexplib.Std;
+
+// TODO: Figure out how to get compare_string and compare_int to exist without manually defining them
+let compare_string = String.compare;
+let compare_int = Int.compare;
+
 [@deriving (sexp, compare)]
 type htyp =
   | Arrow(htyp, htyp)
