@@ -4,7 +4,6 @@ type htyp =
   | Num
   | Hole;
 
-[@deriving (sexp, compare)]
 type hexp =
   | Var(string)
   | Lam(string, hexp)
@@ -15,7 +14,6 @@ type hexp =
   | EHole
   | NEHole(hexp);
 
-[@deriving (sexp, compare)]
 type ztyp =
   | Cursor(htyp)
   | LArrow(ztyp, htyp)
@@ -32,3 +30,39 @@ type zexp =
   | LAsc(zexp, htyp)
   | RAsc(hexp, ztyp)
   | NEHole(zexp);
+
+type child =
+  | One
+  | Two;
+
+type dir =
+  | Child(child)
+  | Parent;
+
+type shape =
+  | Arrow
+  | Num
+  | Asc
+  | Var
+  | Lam
+  | Ap
+  | Lit
+  | Plus
+  | NEHole;
+
+[@deriving (sexp, compare)]
+type action =
+  | Move(dir)
+  | Construct(shape)
+  | Del
+  | Finish;
+
+module TypCtx: {
+  type t('a) = Map.Make(String).t('a);
+  let empty: t('a);
+};
+type typctx = TypCtx.t(htyp);
+
+let syn_action: (typctx, (zexp, htyp), action) => option((zexp, htyp));
+
+let ana_action: (typctx, zexp, action, htyp) => zexp;

@@ -54,32 +54,57 @@ let rec string_of_zexp: Hazelnut.zexp => string =
   | RAsc(e, t) => string_of_asc(string_of_hexp(e), string_of_ztyp(t))
   | NEHole(e) => string_of_nehole(string_of_zexp(e));
 
+[@deriving (sexp, fields, compare)]
+type state = {
+  e: Hazelnut.zexp,
+  t: Hazelnut.htyp,
+  last_action_failed: bool,
+};
+
 module Model = {
   [@deriving (sexp, fields, compare)]
-  type t = {e: Hazelnut.zexp};
+  type t = {state};
 
-  let set_default_expression = (e: Hazelnut.zexp): t => {e: e};
+  let set = (s: state): t => {state: s};
 
   let init = (): t =>
-    set_default_expression(Cursor(Plus(Num(1), Num(2))));
-  let do_nothing = (e: t): t => e;
+    set({
+      e: Cursor(Plus(Plus(Num(1), Num(2)), Num(3))),
+      t: Num,
+      last_action_failed: false,
+    });
+
+  let clear = set({e: Cursor(EHole), t: Hole, last_action_failed: false});
+
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
 
 module Action = {
   [@deriving sexp]
   type t =
-    | DoNothing;
+    | Clear
+    | HazelnutAction(Hazelnut.action);
 };
 
 module State = {
   type t = unit;
 };
 
-let apply_action = (model, action, _, ~schedule_action as _) =>
+let apply_action = (model: Model.t, action, _, ~schedule_action as _) => {
+  let state = model.state;
+
   switch ((action: Action.t)) {
-  | DoNothing => Model.do_nothing(model)
+  | Clear => Model.clear
+  | HazelnutAction(action) =>
+    let result =
+      Hazelnut.syn_action(Hazelnut.TypCtx.empty, (state.e, state.t), action);
+
+    switch (result) {
+    | Some((e, t)) => Model.set({e, t, last_action_failed: false})
+    | None => Model.set({...state, last_action_failed: true})
+    };
   };
+};
 
 let on_startup = (~schedule_action as _, _) => Async_kernel.return();
 
@@ -89,29 +114,50 @@ let view =
   open Incr.Let_syntax;
   open Vdom;
 
-  let button = (label, action) =>
-    Node.button(
-      ~attr=
-        Attr.many_without_merge([
-          Attr.id(String.lowercase(label)),
-          Attr.on_click(_ev => inject(action)),
-        ]),
-      [Node.text(label)],
-    );
+  let%map body = {
+    let%map state = m >>| Model.state;
 
-  let buttons = {
-    let do_nothing_button = button("Do Nothing", Action.DoNothing);
+    let expression_text = string_of_zexp(state.e);
 
-    Node.div([do_nothing_button]);
+    let buttons = {
+      let button = (label, action) =>
+        Node.button(
+          ~attr=
+            Attr.many_without_merge([
+              Attr.id(String.lowercase(label)),
+              Attr.on_click(_ev => inject(action)),
+            ]),
+          [Node.text(label)],
+        );
+
+      let clear_button = button("Clear", Action.Clear);
+
+      let move_parent_button =
+        button("Move to Parent", Action.HazelnutAction(Move(Parent)));
+      let move_child_1_button =
+        button("Move to Child 1", Action.HazelnutAction(Move(Child(One))));
+      let move_child_2_button =
+        button("Move to Child 2", Action.HazelnutAction(Move(Child(Two))));
+
+      Node.div([
+        clear_button,
+        move_parent_button,
+        move_child_1_button,
+        move_child_2_button,
+      ]);
+    };
+
+    let warning =
+      if (state.last_action_failed) {
+        Node.div([Node.text("Action Failed!")]);
+      } else {
+        Node.div([]);
+      };
+
+    Node.div([Node.textf("%s", expression_text), buttons, warning]);
   };
 
-  let%map expression = {
-    let%map e = m >>| Model.e;
-    let expression_text = string_of_zexp(e);
-    Node.div([Node.textf("%s", expression_text)]);
-  };
-
-  Node.body([expression, buttons]);
+  Node.body([body]);
 };
 
 let create = (model, ~old_model as _, ~inject) => {
