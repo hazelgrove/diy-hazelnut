@@ -43,10 +43,10 @@ type shape =
   | Arrow
   | Num
   | Asc
-  | Var
-  | Lam
+  | Var(string)
+  | Lam(string)
   | Ap
-  | Lit
+  | Lit(int)
   | Plus
   | NEHole;
 

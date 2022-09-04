@@ -132,14 +132,16 @@ let view =
 
     let buttons = {
       let button = (label, action) =>
-        Node.button(
-          ~attr=
-            Attr.many_without_merge([
-              Attr.id(String.lowercase(label)),
-              Attr.on_click(_ev => inject(action)),
-            ]),
-          [Node.text(label)],
-        );
+        Node.div([
+          Node.button(
+            ~attr=
+              Attr.many_without_merge([
+                Attr.id(String.lowercase(label)),
+                Attr.on_click(_ev => inject(action)),
+              ]),
+            [Node.text(label)],
+          ),
+        ]);
 
       let clear_button = Node.div([button("Clear", Action.Clear)]);
 
@@ -156,7 +158,47 @@ let view =
           ),
         ]);
 
-      Node.div([clear_button, move_buttons]);
+      let construct_buttons =
+        Node.div([
+          button(
+            "Construct Arrow",
+            Action.HazelnutAction(Construct(Arrow)),
+          ),
+          button("Construct Num", Action.HazelnutAction(Construct(Num))),
+          button("Construct Asc", Action.HazelnutAction(Construct(Asc))),
+          button(
+            "Construct Var",
+            Action.HazelnutAction(Construct(Var("TODO"))) // TODO: Don't hardcode value
+          ),
+          button(
+            "Construct Lam",
+            Action.HazelnutAction(Construct(Lam("TODO"))) // TODO: Don't hardcode value
+          ),
+          button("Construct Ap", Action.HazelnutAction(Construct(Ap))),
+          button(
+            "Construct Lit",
+            Action.HazelnutAction(Construct(Lit(0))) // TODO: Don't hardcode value
+          ),
+          button("Construct Plus", Action.HazelnutAction(Construct(Plus))),
+          button(
+            "Construct NEHole",
+            Action.HazelnutAction(Construct(NEHole)),
+          ),
+        ]);
+
+      let delete_button =
+        Node.div([button("Delete", Action.HazelnutAction(Del))]);
+
+      let finish_button =
+        Node.div([button("Finish", Action.HazelnutAction(Finish))]);
+
+      Node.div([
+        clear_button,
+        move_buttons,
+        construct_buttons,
+        delete_button,
+        finish_button,
+      ]);
     };
 
     let warning =
