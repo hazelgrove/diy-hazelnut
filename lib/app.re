@@ -58,7 +58,7 @@ let rec string_of_zexp: Hazelnut.zexp => string =
 type state = {
   e: Hazelnut.zexp,
   t: Hazelnut.htyp,
-  last_action_failed: bool,
+  warning: option(string),
 };
 
 module Model = {
@@ -71,10 +71,10 @@ module Model = {
     set({
       e: Cursor(Plus(Plus(Num(1), Num(2)), Num(3))),
       t: Num,
-      last_action_failed: false,
+      warning: None,
     });
 
-  let clear = set({e: Cursor(EHole), t: Hole, last_action_failed: false});
+  let clear = set({e: Cursor(EHole), t: Hole, warning: None});
 
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
@@ -93,16 +93,27 @@ module State = {
 let apply_action = (model: Model.t, action, _, ~schedule_action as _) => {
   let state = model.state;
 
+  let warn = (warning: string): Model.t =>
+    Model.set({...state, warning: Some(warning)});
+
   switch ((action: Action.t)) {
   | Clear => Model.clear
   | HazelnutAction(action) =>
-    let result =
-      Hazelnut.syn_action(Hazelnut.TypCtx.empty, (state.e, state.t), action);
+    try({
+      let result =
+        Hazelnut.syn_action(
+          Hazelnut.TypCtx.empty,
+          (state.e, state.t),
+          action,
+        );
 
-    switch (result) {
-    | Some((e, t)) => Model.set({e, t, last_action_failed: false})
-    | None => Model.set({...state, last_action_failed: true})
-    };
+      switch (result) {
+      | Some((e, t)) => Model.set({e, t, warning: None})
+      | None => warn("Invalid action")
+      };
+    }) {
+    | Hazelnut.Unimplemented => warn("Unimplemented")
+    }
   };
 };
 
@@ -117,7 +128,7 @@ let view =
   let%map body = {
     let%map state = m >>| Model.state;
 
-    let expression_text = string_of_zexp(state.e);
+    let expression = Node.textf("%s", string_of_zexp(state.e));
 
     let buttons = {
       let button = (label, action) =>
@@ -130,31 +141,33 @@ let view =
           [Node.text(label)],
         );
 
-      let clear_button = button("Clear", Action.Clear);
+      let clear_button = Node.div([button("Clear", Action.Clear)]);
 
-      let move_parent_button =
-        button("Move to Parent", Action.HazelnutAction(Move(Parent)));
-      let move_child_1_button =
-        button("Move to Child 1", Action.HazelnutAction(Move(Child(One))));
-      let move_child_2_button =
-        button("Move to Child 2", Action.HazelnutAction(Move(Child(Two))));
+      let move_buttons =
+        Node.div([
+          button("Move to Parent", Action.HazelnutAction(Move(Parent))),
+          button(
+            "Move to Child 1",
+            Action.HazelnutAction(Move(Child(One))),
+          ),
+          button(
+            "Move to Child 2",
+            Action.HazelnutAction(Move(Child(Two))),
+          ),
+        ]);
 
-      Node.div([
-        clear_button,
-        move_parent_button,
-        move_child_1_button,
-        move_child_2_button,
-      ]);
+      Node.div([clear_button, move_buttons]);
     };
 
     let warning =
-      if (state.last_action_failed) {
-        Node.div([Node.text("Action Failed!")]);
-      } else {
-        Node.div([]);
-      };
+      Node.div(
+        switch (state.warning) {
+        | Some(warning) => [Node.text(warning)]
+        | None => []
+        },
+      );
 
-    Node.div([Node.textf("%s", expression_text), buttons, warning]);
+    Node.div([expression, buttons, warning]);
   };
 
   Node.body([body]);

@@ -63,6 +63,8 @@ module TypCtx: {
 };
 type typctx = TypCtx.t(htyp);
 
+exception Unimplemented;
+
 let syn_action: (typctx, (zexp, htyp), action) => option((zexp, htyp));
 
 let ana_action: (typctx, zexp, action, htyp) => zexp;
