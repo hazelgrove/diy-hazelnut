@@ -126,6 +126,12 @@ let rec consistent = (t1: htyp, t2: htyp): option(unit) =>
     }
   };
 
+let inconsistent = (t1: htyp, t2: htyp): option(unit) =>
+  switch (consistent(t1, t2)) {
+  | Some () => None
+  | None => Some()
+  };
+
 let rec syn = (ctx: typctx, e: hexp): option(htyp) => {
   switch (e) {
   | Var(x) =>
@@ -234,6 +240,48 @@ let rec syn_action =
   | Some(e') => Some((e', t))
   | None =>
     switch (e, t, a) {
+    // Construct: Asc
+    | (Cursor(e1), _, Construct(Asc)) => Some((RAsc(e1, Cursor(t)), t))
+
+    // Construct: Var
+    | (Cursor(EHole), Hole, Construct(Var(x))) =>
+      try({
+        let ht = TypCtx.find(x, ctx);
+        Some((Cursor(Var(x)), ht));
+      }) {
+      | Not_found => None
+      }
+
+    // Construct: Lam
+    | (Cursor(EHole), Hole, Construct(Lam(x))) =>
+      Some((
+        RAsc(Lam(x, EHole), LArrow(Cursor(Hole), Hole)),
+        Arrow(Hole, Hole),
+      ))
+
+    // Construct: Ap
+    | (Cursor(he), _, Construct(Ap)) =>
+      switch (matched_arrow_type(t), inconsistent(t, Arrow(Hole, Hole))) {
+      | (Some((_, t2)), None) => Some((RAp(he, Cursor(EHole)), t2))
+      | (None, Some ()) => Some((RAp(NEHole(he), Cursor(EHole)), Hole))
+      | _ => None
+      }
+
+    // Construct: Num
+    | (Cursor(EHole), Hole, Construct(Lit(n))) =>
+      Some((Cursor(Num(n)), Num))
+
+    // Construct: Plus
+    | (Cursor(he), _, Construct(Plus)) =>
+      switch (consistent(t, Num)) {
+      | Some () => Some((RPlus(he, Cursor(EHole)), Num))
+      | None => Some((RPlus(NEHole(he), Cursor(EHole)), Num))
+      }
+
+    // Construct: NEHole
+    | (Cursor(he), _, Construct(NEHole)) =>
+      Some((NEHole(Cursor(he)), Hole))
+
     // Zipper Case: Ap
     | (LAp(ze, he), _, _) =>
       let* t2 = syn(ctx, erase_exp(ze));
@@ -275,7 +323,7 @@ let rec syn_action =
       let+ (ze', _) = syn_action(ctx, (ze, ht), a);
       (NEHole(ze'): zexp, Hole);
 
-    | (_, _, Construct(_) | Del | Finish) => raise(Unimplemented)
+    | (_, _, | Del | Finish) => raise(Unimplemented)
 
     | _ => None
     }
@@ -296,6 +344,33 @@ and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
     | Some(_) => movement
     | None =>
       switch (e, a, t) {
+      // Construct: Asc
+      | (Cursor(e1), Construct(Asc), _) => Some(RAsc(e1, Cursor(t)))
+
+      // Construct: Var
+      | (Cursor(EHole), Construct(Var(x)), _) =>
+        try({
+          let t' = TypCtx.find(x, ctx);
+          let+ () = inconsistent(t, t');
+          (NEHole(Cursor(Var(x))): zexp);
+        }) {
+        | Not_found => None
+        }
+
+      // Construct: Lam
+      | (Cursor(EHole), Construct(Lam(x)), _) =>
+        switch (matched_arrow_type(t), inconsistent(t, Arrow(Hole, Hole))) {
+        | (Some(_), None) => Some(Lam(x, Cursor(EHole)))
+        | (None, Some ()) =>
+          Some(NEHole(RAsc(Lam(x, EHole), LArrow(Cursor(Hole), Hole))))
+        | _ => None
+        }
+
+      // Construct: Num
+      | (Cursor(EHole), Construct(Lit(n)), _) =>
+        let+ () = inconsistent(t, Num);
+        (NEHole(Cursor(Num(n))): zexp);
+
       // Zipper Case: Lam
       | (Lam(x, ze), _, _) =>
         let* (t1, t2) = matched_arrow_type(t);
