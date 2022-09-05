@@ -152,6 +152,7 @@ let rec syn = (ctx: typctx, e: hexp): option(htyp) => {
     Hole;
   };
 }
+
 and ana = (ctx: typctx, e: hexp, t: htyp): option(unit) => {
   switch (e) {
   | Lam(x, e) =>
@@ -163,6 +164,32 @@ and ana = (ctx: typctx, e: hexp, t: htyp): option(unit) => {
     consistent(t, t');
   };
 };
+
+let exp_movement = (e: zexp, d: dir): option(zexp) =>
+  switch (e, d) {
+  | (Cursor(Asc(e, t)), Child(One)) => Some(LAsc(Cursor(e), t))
+  | (Cursor(Asc(e, t)), Child(Two)) => Some(RAsc(e, Cursor(t)))
+  | (LAsc(Cursor(e), t), Parent)
+  | (RAsc(e, Cursor(t)), Parent) => Some(Cursor(Asc(e, t)))
+
+  | (Cursor(Lam(x, e)), Child(One)) => Some(Lam(x, Cursor(e)))
+  | (Lam(x, Cursor(e)), Parent) => Some(Cursor(Lam(x, e)))
+
+  | (Cursor(Plus(e1, e2)), Child(One)) => Some(LPlus(Cursor(e1), e2))
+  | (Cursor(Plus(e1, e2)), Child(Two)) => Some(RPlus(e1, Cursor(e2)))
+  | (LPlus(Cursor(e1), e2), Parent)
+  | (RPlus(e1, Cursor(e2)), Parent) => Some(Cursor(Plus(e1, e2)))
+
+  | (Cursor(Ap(e1, e2)), Child(One)) => Some(LAp(Cursor(e1), e2))
+  | (Cursor(Ap(e1, e2)), Child(Two)) => Some(RAp(e1, Cursor(e2)))
+  | (LAp(Cursor(e1), e2), Parent)
+  | (RAp(e1, Cursor(e2)), Parent) => Some(Cursor(Ap(e1, e2)))
+
+  | (Cursor(NEHole(e)), Child(One)) => Some(NEHole(Cursor(e)))
+  | (NEHole(Cursor(e)), Parent) => Some(Cursor(NEHole(e)))
+
+  | _ => None
+  };
 
 let rec typ_action = (t: ztyp, a: action): option(ztyp) => {
   switch (t, a) {
@@ -195,103 +222,95 @@ let rec typ_action = (t: ztyp, a: action): option(ztyp) => {
 
 let rec syn_action =
         (ctx: typctx, (e: zexp, t: htyp), a: action): option((zexp, htyp)) => {
-  switch (e, t, a) {
-  // Movement: Asc
-  | (Cursor(Asc(e1, t1)), _, Move(Child(One))) =>
-    Some((LAsc(Cursor(e1), t1), t))
-  | (Cursor(Asc(e1, t1)), _, Move(Child(Two))) =>
-    Some((RAsc(e1, Cursor(t1)), t))
-  | (LAsc(Cursor(e1), t1), _, Move(Parent))
-  | (RAsc(e1, Cursor(t1)), _, Move(Parent)) =>
-    Some((Cursor(Asc(e1, t1)), t))
+  // Try movement first
+  let movement =
+    switch (a) {
+    | Move(d) => exp_movement(e, d)
+    | _ => None
+    };
 
-  // Movement: Lam
-  | (Cursor(Lam(x, e1)), _, Move(Child(One))) =>
-    Some((Lam(x, Cursor(e1)), t))
-  | (Lam(x, Cursor(e1)), _, Move(Parent)) =>
-    Some((Cursor(Lam(x, e1)), t))
+  // If movement fails, try synthetic actions
+  switch (movement) {
+  | Some(e') => Some((e', t))
+  | None =>
+    switch (e, t, a) {
+    // Zipper Case: Ap
+    | (LAp(ze, he), _, _) =>
+      let* t2 = syn(ctx, erase_exp(ze));
+      let* (ze', t3) = syn_action(ctx, (ze, t2), a);
+      let* (t4, t5) = matched_arrow_type(t3);
+      let+ () = ana(ctx, he, t4);
+      (LAp(ze', he), t5);
+    | (RAp(he, ze), _, _) =>
+      let* t2 = syn(ctx, he);
+      let* (t3, t4) = matched_arrow_type(t2);
+      let+ ze' = ana_action(ctx, ze, a, t3);
+      (RAp(he, ze'), t4);
 
-  // Movement: Plus
-  | (Cursor(Plus(e1, e2)), _, Move(Child(One))) =>
-    Some((LPlus(Cursor(e1), e2), t))
-  | (Cursor(Plus(e1, e2)), _, Move(Child(Two))) =>
-    Some((RPlus(e1, Cursor(e2)), t))
-  | (LPlus(Cursor(e1), e2), _, Move(Parent))
-  | (RPlus(e1, Cursor(e2)), _, Move(Parent)) =>
-    Some((Cursor(Plus(e1, e2)), t))
+    // Zipper Case: Plus
+    | (LPlus(ze, he), Num, _) =>
+      let+ ze' = ana_action(ctx, ze, a, Num);
+      (LPlus(ze', he), Num: htyp);
+    | (RPlus(he, ze), Num, _) =>
+      let+ ze' = ana_action(ctx, ze, a, Num);
+      (RPlus(he, ze'), Num: htyp);
 
-  // Moveement: Ap
-  | (Cursor(Ap(e1, e2)), _, Move(Child(One))) =>
-    Some((LAp(Cursor(e1), e2), t))
-  | (Cursor(Ap(e1, e2)), _, Move(Child(Two))) =>
-    Some((RAp(e1, Cursor(e2)), t))
-  | (LAp(Cursor(e1), e2), _, Move(Parent))
-  | (RAp(e1, Cursor(e2)), _, Move(Parent)) =>
-    Some((Cursor(Ap(e1, e2)), t))
+    // Zipper Case: Asc
+    | (LAsc(ze, ht), _, _) =>
+      let+ ze' = ana_action(ctx, ze, a, ht);
+      (LAsc(ze', ht), ht);
+    | (RAsc(he, zt), ht, _) =>
+      if (ht == erase_typ(zt)) {
+        let* zt' = typ_action(zt, a);
+        let ht' = erase_typ(zt');
+        let+ () = ana(ctx, he, ht');
+        (RAsc(he, zt'), ht');
+      } else {
+        None;
+      }
 
-  // Movement: NEHole
-  | (Cursor(NEHole(e1)), _, Move(Child(One))) =>
-    Some((NEHole(Cursor(e1)), t))
-  | (NEHole(Cursor(e1)), _, Move(Parent)) =>
-    Some((Cursor(NEHole(e1)), t))
+    // Zipper Case: NEHole
+    | (NEHole(ze), Hole, _) =>
+      let* ht = syn(ctx, erase_exp(ze));
+      let+ (ze', _) = syn_action(ctx, (ze, ht), a);
+      (NEHole(ze'): zexp, Hole);
 
-  // Zipper Case: Ap
-  | (LAp(ze, he), _, _) =>
-    let* t2 = syn(ctx, erase_exp(ze));
-    let* (ze', t3) = syn_action(ctx, (ze, t2), a);
-    let* (t4, t5) = matched_arrow_type(t3);
-    let+ () = ana(ctx, he, t4);
-    (LAp(ze', he), t5);
-  | (RAp(he, ze), _, _) =>
-    let* t2 = syn(ctx, he);
-    let* (t3, t4) = matched_arrow_type(t2);
-    let+ ze' = ana_action(ctx, ze, a, t3);
-    (RAp(he, ze'), t4);
+    | (_, _, Construct(_) | Del | Finish) => raise(Unimplemented)
 
-  // Zipper Case: Plus
-  | (LPlus(ze, he), Num, _) =>
-    let+ ze' = ana_action(ctx, ze, a, Num);
-    (LPlus(ze', he), Num: htyp);
-  | (RPlus(he, ze), Num, _) =>
-    let+ ze' = ana_action(ctx, ze, a, Num);
-    (RPlus(he, ze'), Num: htyp);
-
-  // Zipper Case: Asc
-  | (LAsc(ze, ht), _, _) =>
-    let+ ze' = ana_action(ctx, ze, a, ht);
-    (LAsc(ze', ht), ht);
-  | (RAsc(he, zt), ht, _) =>
-    if (ht == erase_typ(zt)) {
-      let* zt' = typ_action(zt, a);
-      let ht' = erase_typ(zt');
-      let+ () = ana(ctx, he, ht');
-      (RAsc(he, zt'), ht');
-    } else {
-      None;
+    | _ => None
     }
-
-  // Zipper Case: NEHole
-  | (NEHole(ze), Hole, _) =>
-    let* ht = syn(ctx, erase_exp(ze));
-    let+ (ze', _) = syn_action(ctx, (ze, ht), a);
-    (NEHole(ze'): zexp, Hole);
-
-  | (_, _, Construct(_) | Del | Finish) => raise(Unimplemented)
-
-  | _ => None
   };
 }
-and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
-  switch (e, a, t) {
-  // Zipper Case: Lam
-  | (Lam(x, ze), _, _) =>
-    let* (t1, t2) = matched_arrow_type(t);
-    let ctx' = TypCtx.add(x, t1, ctx);
-    let+ ze' = ana_action(ctx', ze, a, t2);
-    (Lam(x, ze'): zexp);
 
-  // Subsumption
-  | (_, _, _) =>
+and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
+  // Try movement first
+  let movement =
+    switch (a) {
+    | Move(d) => exp_movement(e, d)
+    | _ => None
+    };
+
+  // If movement fails, try analytic actions
+  let analysis =
+    switch (movement) {
+    | Some(_) => movement
+    | None =>
+      switch (e, a, t) {
+      // Zipper Case: Lam
+      | (Lam(x, ze), _, _) =>
+        let* (t1, t2) = matched_arrow_type(t);
+        let ctx' = TypCtx.add(x, t1, ctx);
+        let+ ze' = ana_action(ctx', ze, a, t2);
+        (Lam(x, ze'): zexp);
+
+      | _ => None
+      }
+    };
+
+  // If analysis fails, try subsumption as a last resort
+  switch (analysis) {
+  | Some(_) => analysis
+  | None =>
     let* t' = syn(ctx, erase_exp(e));
     let* (e', t'') = syn_action(ctx, (e, t'), a);
     let+ () = consistent(t, t'');
