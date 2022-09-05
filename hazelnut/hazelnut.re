@@ -110,13 +110,20 @@ let rec erase_exp: zexp => hexp =
   | RAsc(e, t) => Asc(e, erase_typ(t))
   | NEHole(e) => NEHole(erase_exp(e));
 
-let rec consistent = (t1: htyp, t2: htyp): bool =>
+let rec consistent = (t1: htyp, t2: htyp): option(unit) =>
   switch (t1, t2) {
   | (Hole, _)
-  | (_, Hole) => true
+  | (_, Hole) => Some()
   | (Arrow(t1, t2), Arrow(t1', t2')) =>
-    consistent(t1, t2) && consistent(t1', t2')
-  | (t1, t2) => t1 == t2
+    let* () = consistent(t1, t2);
+    let+ () = consistent(t1', t2');
+    ();
+  | (t1, t2) =>
+    if (t1 == t2) {
+      Some();
+    } else {
+      None;
+    }
   };
 
 let rec syn = (ctx: typctx, e: hexp): option(htyp) => {
@@ -129,44 +136,31 @@ let rec syn = (ctx: typctx, e: hexp): option(htyp) => {
   | Ap(e1, e2) =>
     let* t1 = syn(ctx, e1);
     let* (t2, t) = matched_arrow_type(t1);
-    if (ana(ctx, e2, t2)) {
-      Some(t);
-    } else {
-      None;
-    };
+    let+ () = ana(ctx, e2, t2);
+    t;
   | Num(_) => Some(Num)
   | Plus(e1, e2) =>
-    if (ana(ctx, e1, Num) && ana(ctx, e2, Num)) {
-      Some(Num);
-    } else {
-      None;
-    }
+    let* () = ana(ctx, e1, Num);
+    let+ () = ana(ctx, e2, Num);
+    (Num: htyp);
   | Asc(e, t) =>
-    if (ana(ctx, e, t)) {
-      Some(t);
-    } else {
-      None;
-    }
+    let+ () = ana(ctx, e, t);
+    t;
   | EHole => Some(Hole)
   | NEHole(e) =>
     let+ _ = syn(ctx, e);
     Hole;
   };
 }
-and ana = (ctx: typctx, e: hexp, t: htyp): bool => {
+and ana = (ctx: typctx, e: hexp, t: htyp): option(unit) => {
   switch (e) {
   | Lam(x, e) =>
-    switch (matched_arrow_type(t)) {
-    | Some((t1, t2)) =>
-      let ctx' = TypCtx.add(x, t1, ctx);
-      ana(ctx', e, t2);
-    | None => false
-    }
+    let* (t1, t2) = matched_arrow_type(t);
+    let ctx' = TypCtx.add(x, t1, ctx);
+    ana(ctx', e, t2);
   | _ =>
-    switch (syn(ctx, e)) {
-    | Some(t') => consistent(t, t')
-    | None => false
-    }
+    let* t' = syn(ctx, e);
+    consistent(t, t');
   };
 };
 
@@ -246,11 +240,8 @@ let rec syn_action =
     let* t2 = syn(ctx, erase_exp(ze));
     let* (ze', t3) = syn_action(ctx, (ze, t2), a);
     let* (t4, t5) = matched_arrow_type(t3);
-    if (ana(ctx, he, t4)) {
-      Some((LAp(ze', he), t5));
-    } else {
-      None;
-    };
+    let+ () = ana(ctx, he, t4);
+    (LAp(ze', he), t5);
   | (RAp(he, ze), _, _) =>
     let* t2 = syn(ctx, he);
     let* (t3, t4) = matched_arrow_type(t2);
@@ -273,11 +264,8 @@ let rec syn_action =
     if (ht == erase_typ(zt)) {
       let* zt' = typ_action(zt, a);
       let ht' = erase_typ(zt');
-      if (ana(ctx, he, ht')) {
-        Some((RAsc(he, zt'), ht'));
-      } else {
-        None;
-      };
+      let+ () = ana(ctx, he, ht');
+      (RAsc(he, zt'), ht');
     } else {
       None;
     }
@@ -306,10 +294,7 @@ and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
   | (_, _, _) =>
     let* t' = syn(ctx, erase_exp(e));
     let* (e', t'') = syn_action(ctx, (e, t'), a);
-    if (consistent(t, t'')) {
-      Some(e');
-    } else {
-      None;
-    };
+    let+ () = consistent(t, t'');
+    e';
   };
 };
