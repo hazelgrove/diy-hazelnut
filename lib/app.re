@@ -69,7 +69,7 @@ module Model = {
 
   let init = (): t =>
     set({
-      e: Cursor(Plus(Plus(Num(1), Num(2)), Num(3))),
+      e: Cursor(Plus(Plus(Num(1), EHole), Num(3))),
       t: Num,
       warning: None,
     });
@@ -128,7 +128,11 @@ let view =
   let%map body = {
     let%map state = m >>| Model.state;
 
-    let expression = Node.textf("%s", string_of_zexp(state.e));
+    let expression =
+      Node.div([
+        Node.p([Node.textf("%s", string_of_zexp(state.e))]),
+        Node.p([Node.textf("%s", string_of_htyp(state.t))]),
+      ]);
 
     let buttons = {
       let button = (label, action) =>
@@ -142,8 +146,6 @@ let view =
             [Node.text(label)],
           ),
         ]);
-
-      let clear_button = Node.div([button("Clear", Action.Clear)]);
 
       let move_buttons =
         Node.div([
@@ -192,17 +194,19 @@ let view =
       let finish_button =
         Node.div([button("Finish", Action.HazelnutAction(Finish))]);
 
+      let clear_button = Node.div([button("Clear", Action.Clear)]);
+
       Node.div([
-        clear_button,
         move_buttons,
         construct_buttons,
         delete_button,
         finish_button,
+        clear_button,
       ]);
     };
 
     let warning =
-      Node.div(
+      Node.p(
         switch (state.warning) {
         | Some(warning) => [Node.text(warning)]
         | None => []

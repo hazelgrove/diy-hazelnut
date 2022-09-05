@@ -268,7 +268,7 @@ let rec syn_action =
   // Zipper Case: Asc
   | (LAsc(ze, ht), _, _) =>
     let+ ze' = ana_action(ctx, ze, a, ht);
-    (ze', ht);
+    (LAsc(ze', ht), ht);
   | (RAsc(he, zt), ht, _) =>
     if (ht == erase_typ(zt)) {
       let* zt' = typ_action(zt, a);
