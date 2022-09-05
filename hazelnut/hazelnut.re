@@ -282,6 +282,9 @@ let rec syn_action =
     | (Cursor(he), _, Construct(NEHole)) =>
       Some((NEHole(Cursor(he)), Hole))
 
+    // Deletion
+    | (Cursor(_), _, Del) => Some((Cursor(EHole), Hole))
+
     // Zipper Case: Ap
     | (LAp(ze, he), _, _) =>
       let* t2 = syn(ctx, erase_exp(ze));
@@ -323,7 +326,7 @@ let rec syn_action =
       let+ (ze', _) = syn_action(ctx, (ze, ht), a);
       (NEHole(ze'): zexp, Hole);
 
-    | (_, _, | Del | Finish) => raise(Unimplemented)
+    | (_, _, Finish) => raise(Unimplemented)
 
     | _ => None
     }
@@ -370,6 +373,9 @@ and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
       | (Cursor(EHole), Construct(Lit(n)), _) =>
         let+ () = inconsistent(t, Num);
         (NEHole(Cursor(Num(n))): zexp);
+
+      // Deletion
+      | (Cursor(_), Del, _) => Some(Cursor(EHole))
 
       // Zipper Case: Lam
       | (Lam(x, ze), _, _) =>
