@@ -2,6 +2,19 @@ open Core;
 open Incr_dom;
 module Hazelnut = Hazelnut_lib.Hazelnut;
 
+// Maybe Monad
+let ( let* ) = (x: option('a), f: 'a => option('b)): option('b) =>
+  switch (x) {
+  | Some(x) => f(x)
+  | None => None
+  };
+
+// Maybe Monad
+let (let+) = (x: option('a), f: 'a => 'b): option('b) => {
+  let* x = x;
+  Some(f(x));
+};
+
 let string_of_cursor = (e: string): string => "👉" ++ e ++ "👈";
 let string_of_arrow = (t1: string, t2: string): string =>
   "(" ++ t1 ++ ") -> (" ++ t2 ++ ")";
@@ -59,6 +72,9 @@ type state = {
   e: Hazelnut.zexp,
   t: Hazelnut.htyp,
   warning: option(string),
+  var_input: string,
+  lam_input: string,
+  lit_input: string,
 };
 
 module Model = {
@@ -69,52 +85,71 @@ module Model = {
 
   let init = (): t =>
     set({
-      e: Cursor(Plus(Plus(Num(1), EHole), Num(3))),
-      t: Num,
+      e: Cursor(EHole),
+      t: Hole,
       warning: None,
+      var_input: "",
+      lam_input: "",
+      lit_input: "",
     });
-
-  let clear = set({e: Cursor(EHole), t: Hole, warning: None});
 
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
 
 module Action = {
   [@deriving sexp]
-  type t =
-    | Clear
-    | HazelnutAction(Hazelnut.action);
+  type input_location =
+    | Var
+    | Lam
+    | Lit;
+
+  [@deriving sexp]
+  type action =
+    | HazelnutAction(Hazelnut.action)
+    | UpdateInput(input_location, string)
+    | ShowWarning(string);
+
+  [@deriving sexp]
+  type t = list(action);
 };
 
 module State = {
   type t = unit;
 };
 
-let apply_action = (model: Model.t, action, _, ~schedule_action as _) => {
-  let state = model.state;
+let apply_action =
+    (model: Model.t, actions: Action.t, _, ~schedule_action as _): Model.t => {
+  let f = (model: Model.t, action: Action.action): Model.t => {
+    let state = model.state;
 
-  let warn = (warning: string): Model.t =>
-    Model.set({...state, warning: Some(warning)});
+    let warn = (warning: string): Model.t =>
+      Model.set({...state, warning: Some(warning)});
 
-  switch ((action: Action.t)) {
-  | Clear => Model.clear
-  | HazelnutAction(action) =>
-    try({
-      let result =
-        Hazelnut.syn_action(
-          Hazelnut.TypCtx.empty,
-          (state.e, state.t),
-          action,
-        );
+    switch (action) {
+    | HazelnutAction(action) =>
+      try({
+        let result =
+          Hazelnut.syn_action(
+            Hazelnut.TypCtx.empty,
+            (state.e, state.t),
+            action,
+          );
 
-      switch (result) {
-      | Some((e, t)) => Model.set({e, t, warning: None})
-      | None => warn("Invalid action")
-      };
-    }) {
-    | Hazelnut.Unimplemented => warn("Unimplemented")
-    }
+        switch (result) {
+        | Some((e, t)) => Model.set({...state, e, t, warning: None})
+        | None => warn("Invalid action")
+        };
+      }) {
+      | Hazelnut.Unimplemented => warn("Unimplemented")
+      }
+    | UpdateInput(Var, var_input) => Model.set({...state, var_input})
+    | UpdateInput(Lam, lam_input) => Model.set({...state, lam_input})
+    | UpdateInput(Lit, lit_input) => Model.set({...state, lit_input})
+    | ShowWarning(warning) => Model.set({...state, warning: Some(warning)})
+    };
   };
+
+  List.fold_left(actions, ~init=model, ~f);
 };
 
 let on_startup = (~schedule_action as _, _) => Async_kernel.return();
@@ -135,28 +170,71 @@ let view =
       ]);
 
     let buttons = {
-      let button = (label, action) =>
-        Node.div([
+      let button =
+          (
+            label: string,
+            action: Action.action,
+            input: option((Action.input_location, string)),
+          )
+          : Node.t => {
+        let button_node = {
+          let actions =
+            switch (input) {
+            | Some((input_location, _)) => [
+                action,
+                Action.UpdateInput(input_location, ""),
+              ]
+            | None => [action]
+            };
+
           Node.button(
             ~attr=
               Attr.many_without_merge([
-                Attr.id(String.lowercase(label)),
-                Attr.on_click(_ev => inject(action)),
+                Attr.on_click(_ev => inject(actions)),
               ]),
             [Node.text(label)],
-          ),
-        ]);
+          );
+        };
+
+        let input_node = {
+          let+ (input_location, input_value) = input;
+          Node.input(
+            ~attr=
+              Attr.many_without_merge([
+                Attr.type_("text"),
+                Attr.string_property("value", input_value),
+                Attr.on_input((_ev, text) =>
+                  inject([Action.UpdateInput(input_location, text)])
+                ),
+              ]),
+            [],
+          );
+        };
+
+        Node.div(
+          switch (input_node) {
+          | Some(input_node) => [button_node, input_node]
+          | None => [button_node]
+          },
+        );
+      };
 
       let move_buttons =
         Node.div([
-          button("Move to Parent", Action.HazelnutAction(Move(Parent))),
+          button(
+            "Move to Parent",
+            Action.HazelnutAction(Move(Parent)),
+            None,
+          ),
           button(
             "Move to Child 1",
             Action.HazelnutAction(Move(Child(One))),
+            None,
           ),
           button(
             "Move to Child 2",
             Action.HazelnutAction(Move(Child(Two))),
+            None,
           ),
         ]);
 
@@ -165,43 +243,67 @@ let view =
           button(
             "Construct Arrow",
             Action.HazelnutAction(Construct(Arrow)),
+            None,
           ),
-          button("Construct Num", Action.HazelnutAction(Construct(Num))),
-          button("Construct Asc", Action.HazelnutAction(Construct(Asc))),
+          button(
+            "Construct Num",
+            Action.HazelnutAction(Construct(Num)),
+            None,
+          ),
+          button(
+            "Construct Asc",
+            Action.HazelnutAction(Construct(Asc)),
+            None,
+          ),
           button(
             "Construct Var",
-            Action.HazelnutAction(Construct(Var("TODO"))) // TODO: Don't hardcode value
+            Action.HazelnutAction(Construct(Var(state.var_input))), // TODO: Don't hardcode value
+            Some((Var, state.var_input)),
           ),
           button(
             "Construct Lam",
-            Action.HazelnutAction(Construct(Lam("TODO"))) // TODO: Don't hardcode value
+            Action.HazelnutAction(Construct(Lam(state.lam_input))), // TODO: Don't hardcode value
+            Some((Lam, state.lam_input)),
           ),
-          button("Construct Ap", Action.HazelnutAction(Construct(Ap))),
+          button(
+            "Construct Ap",
+            Action.HazelnutAction(Construct(Ap)),
+            None,
+          ),
           button(
             "Construct Lit",
-            Action.HazelnutAction(Construct(Lit(0))) // TODO: Don't hardcode value
+            try(
+              Action.HazelnutAction(
+                Construct(Lit(int_of_string(state.lit_input))),
+              )
+            ) {
+            | Failure(_) => Action.ShowWarning("Invalid input")
+            },
+            Some((Lit, state.lit_input)),
           ),
-          button("Construct Plus", Action.HazelnutAction(Construct(Plus))),
+          button(
+            "Construct Plus",
+            Action.HazelnutAction(Construct(Plus)),
+            None,
+          ),
           button(
             "Construct NEHole",
             Action.HazelnutAction(Construct(NEHole)),
+            None,
           ),
         ]);
 
       let delete_button =
-        Node.div([button("Delete", Action.HazelnutAction(Del))]);
+        Node.div([button("Delete", Action.HazelnutAction(Del), None)]);
 
       let finish_button =
-        Node.div([button("Finish", Action.HazelnutAction(Finish))]);
-
-      let clear_button = Node.div([button("Clear", Action.Clear)]);
+        Node.div([button("Finish", Action.HazelnutAction(Finish), None)]);
 
       Node.div([
         move_buttons,
         construct_buttons,
         delete_button,
         finish_button,
-        clear_button,
       ]);
     };
 
