@@ -15,57 +15,126 @@ let (let+) = (x: option('a), f: 'a => 'b): option('b) => {
   Some(f(x));
 };
 
-let string_of_cursor = (e: string): string => "👉" ++ e ++ "👈";
-let string_of_arrow = (t1: string, t2: string): string =>
-  "(" ++ t1 ++ ") -> (" ++ t2 ++ ")";
-let string_of_lam = (x: string, e: string): string =>
-  "fun " ++ x ++ " -> { " ++ e ++ " }";
-let string_of_ap = (e1: string, e2: string): string =>
-  "(" ++ e1 ++ ") (" ++ e2 ++ ")";
-let string_of_plus = (e1: string, e2: string): string =>
-  "(" ++ e1 ++ ") + (" ++ e2 ++ ")";
-let string_of_asc = (e: string, t: string): string =>
-  "(" ++ e ++ "): (" ++ t ++ ")";
-let string_of_ehole: string = "[ ]";
-let string_of_nehole = (e: string): string => "[ " ++ e ++ " ]";
+// A combination of all Hazelnut types for purposes of printing
+type pexp =
+  | Cursor(pexp)
+  | Arrow(pexp, pexp)
+  | Num
+  | Var(string)
+  | Lam(string, pexp)
+  | Ap(pexp, pexp)
+  | Lit(int)
+  | Plus(pexp, pexp)
+  | Asc(pexp, pexp)
+  | EHole
+  | NEHole(pexp);
 
-let rec string_of_htyp: Hazelnut.htyp => string =
+let rec pexp_of_htyp: Hazelnut.htyp => pexp =
   fun
-  | Arrow(t1, t2) =>
-    string_of_arrow(string_of_htyp(t1), string_of_htyp(t2))
+  | Arrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_htyp(t2))
+  | Num => Num
+  | Hole => EHole;
+
+let rec pexp_of_hexp: Hazelnut.hexp => pexp =
+  fun
+  | Var(x) => Var(x)
+  | Lam(x, e) => Lam(x, pexp_of_hexp(e))
+  | Ap(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_hexp(e2))
+  | Lit(n) => Lit(n)
+  | Plus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_hexp(e2))
+  | Asc(e, t) => Asc(pexp_of_hexp(e), pexp_of_htyp(t))
+  | EHole => EHole
+  | NEHole(e) => NEHole(pexp_of_hexp(e));
+
+let rec pexp_of_ztyp: Hazelnut.ztyp => pexp =
+  fun
+  | Cursor(t) => Cursor(pexp_of_htyp(t))
+  | LArrow(t1, t2) => Arrow(pexp_of_ztyp(t1), pexp_of_htyp(t2))
+  | RArrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_ztyp(t2));
+
+let rec pexp_of_zexp: Hazelnut.zexp => pexp =
+  fun
+  | Cursor(e) => Cursor(pexp_of_hexp(e))
+  | Lam(x, e) => Lam(x, pexp_of_zexp(e))
+  | LAp(e1, e2) => Ap(pexp_of_zexp(e1), pexp_of_hexp(e2))
+  | RAp(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_zexp(e2))
+  | LPlus(e1, e2) => Plus(pexp_of_zexp(e1), pexp_of_hexp(e2))
+  | RPlus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_zexp(e2))
+  | LAsc(e, t) => Asc(pexp_of_zexp(e), pexp_of_htyp(t))
+  | RAsc(e, t) => Asc(pexp_of_hexp(e), pexp_of_ztyp(t))
+  | NEHole(e) => NEHole(pexp_of_zexp(e));
+
+// Lower is tighter
+let rec prec: pexp => int =
+  fun
+  | Cursor(e) => prec(e)
+  | Arrow(_) => 1
+  | Num => 0
+  | Var(_) => 0
+  | Lam(_) => 0
+  | Ap(_) => 2
+  | Lit(_) => 0
+  | Plus(_) => 3
+  | Asc(_) => 4
+  | EHole => 0
+  | NEHole(_) => 0;
+
+type side =
+  | Left
+  | Right
+  | Atom;
+
+let rec assoc: pexp => side =
+  fun
+  | Cursor(e) => assoc(e)
+  | Arrow(_) => Right
+  | Num => Atom
+  | Var(_) => Atom
+  | Lam(_) => Atom
+  | Ap(_) => Left
+  | Lit(_) => Atom
+  | Plus(_) => Left
+  | Asc(_) => Left
+  | EHole => Atom
+  | NEHole(_) => Atom;
+
+let rec string_of_pexp: pexp => string =
+  fun
+  | Cursor(e) => "👉" ++ string_of_pexp(e) ++ "👈"
+  | Arrow(t1, t2) as outer =>
+    paren(t1, outer, Left) ++ " -> " ++ paren(t2, outer, Right)
   | Num => "Num"
-  | Hole => string_of_ehole;
-
-let rec string_of_hexp: Hazelnut.hexp => string =
-  fun
   | Var(x) => x
-  | Lam(x, e) => string_of_lam(x, string_of_hexp(e))
-  | Ap(e1, e2) => string_of_ap(string_of_hexp(e1), string_of_hexp(e2))
-  | Num(n) => string_of_int(n)
-  | Plus(e1, e2) => string_of_plus(string_of_hexp(e1), string_of_hexp(e2))
-  | Asc(e, t) => string_of_asc(string_of_hexp(e), string_of_htyp(t))
-  | EHole => string_of_ehole
-  | NEHole(e) => string_of_nehole(string_of_hexp(e));
+  | Lam(x, e) => "fun " ++ x ++ " -> { " ++ string_of_pexp(e) ++ " }"
+  | Ap(e1, e2) as outer =>
+    paren(e1, outer, Left) ++ " " ++ paren(e2, outer, Right)
+  | Lit(n) => string_of_int(n)
+  | Plus(e1, e2) as outer =>
+    paren(e1, outer, Left) ++ " + " ++ paren(e2, outer, Right)
+  | Asc(e, t) as outer =>
+    paren(e, outer, Left) ++ ": " ++ paren(t, outer, Right)
+  | EHole => "[ ]"
+  | NEHole(e) => "[ " ++ string_of_pexp(e) ++ " ]"
 
-let rec string_of_ztyp: Hazelnut.ztyp => string =
-  fun
-  | Cursor(t) => string_of_cursor(string_of_htyp(t))
-  | LArrow(t1, t2) =>
-    string_of_arrow(string_of_ztyp(t1), string_of_htyp(t2))
-  | RArrow(t1, t2) =>
-    string_of_arrow(string_of_htyp(t1), string_of_ztyp(t2));
+and paren = (inner: pexp, outer: pexp, side: side): string => {
+  let unparenned = string_of_pexp(inner);
+  let parenned = "(" ++ unparenned ++ ")";
 
-let rec string_of_zexp: Hazelnut.zexp => string =
-  fun
-  | Cursor(e) => string_of_cursor(string_of_hexp(e))
-  | Lam(x, e) => string_of_lam(x, string_of_zexp(e))
-  | LAp(e1, e2) => string_of_ap(string_of_zexp(e1), string_of_hexp(e2))
-  | RAp(e1, e2) => string_of_ap(string_of_hexp(e1), string_of_zexp(e2))
-  | LPlus(e1, e2) => string_of_plus(string_of_zexp(e1), string_of_hexp(e2))
-  | RPlus(e1, e2) => string_of_plus(string_of_hexp(e1), string_of_zexp(e2))
-  | LAsc(e, t) => string_of_asc(string_of_zexp(e), string_of_htyp(t))
-  | RAsc(e, t) => string_of_asc(string_of_hexp(e), string_of_ztyp(t))
-  | NEHole(e) => string_of_nehole(string_of_zexp(e));
+  let prec_inner = prec(inner);
+  let prec_outer = prec(outer);
+
+  if (prec_inner < prec_outer) {
+    unparenned;
+  } else if (prec_inner > prec_outer) {
+    parenned;
+  } else {
+    switch (assoc(inner), side) {
+    | (Left, Right)
+    | (Right, Left) => parenned
+    | _ => unparenned
+    };
+  };
+};
 
 [@deriving (sexp, fields, compare)]
 type state = {
@@ -165,8 +234,8 @@ let view =
 
     let expression =
       Node.div([
-        Node.p([Node.textf("%s", string_of_zexp(state.e))]),
-        Node.p([Node.textf("%s", string_of_htyp(state.t))]),
+        Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(state.e)))]),
+        Node.p([Node.textf("%s", string_of_pexp(pexp_of_htyp(state.t)))]),
       ]);
 
     let buttons = {

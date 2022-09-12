@@ -8,7 +8,7 @@ type hexp =
   | Var(string)
   | Lam(string, hexp)
   | Ap(hexp, hexp)
-  | Num(int)
+  | Lit(int)
   | Plus(hexp, hexp)
   | Asc(hexp, htyp)
   | EHole

@@ -15,7 +15,7 @@ type hexp =
   | Var(string)
   | Lam(string, hexp)
   | Ap(hexp, hexp)
-  | Num(int)
+  | Lit(int)
   | Plus(hexp, hexp)
   | Asc(hexp, htyp)
   | EHole
@@ -144,7 +144,7 @@ let rec syn = (ctx: typctx, e: hexp): option(htyp) => {
     let* (t2, t) = matched_arrow_type(t1);
     let+ () = ana(ctx, e2, t2);
     t;
-  | Num(_) => Some(Num)
+  | Lit(_) => Some(Num)
   | Plus(e1, e2) =>
     let* () = ana(ctx, e1, Num);
     let+ () = ana(ctx, e2, Num);
@@ -208,7 +208,7 @@ let rec typ_action = (t: ztyp, a: action): option(ztyp) => {
   | (RArrow(t1, Cursor(t2)), Move(Parent)) => Some(Cursor(Arrow(t1, t2)))
 
   // Deletion
-  | (_, Del) => Some(Cursor(Hole))
+  | (Cursor(_), Del) => Some(Cursor(Hole))
 
   // Construction
   | (Cursor(t), Construct(Arrow)) => Some(RArrow(t, Cursor(Hole)))
@@ -267,9 +267,9 @@ let rec syn_action =
       | _ => None
       }
 
-    // Construct: Num
+    // Construct: Lit
     | (Cursor(EHole), Hole, Construct(Lit(n))) =>
-      Some((Cursor(Num(n)), Num))
+      Some((Cursor(Lit(n)), Num))
 
     // Construct: Plus
     | (Cursor(he), _, Construct(Plus)) =>
@@ -372,10 +372,10 @@ and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
         | _ => None
         }
 
-      // Construct: Num
+      // Construct: Lit
       | (Cursor(EHole), Construct(Lit(n)), _) =>
         let+ () = inconsistent(t, Num);
-        (NEHole(Cursor(Num(n))): zexp);
+        (NEHole(Cursor(Lit(n))): zexp);
 
       // Deletion
       | (Cursor(_), Del, _) => Some(Cursor(EHole))
