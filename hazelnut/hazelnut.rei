@@ -4,6 +4,7 @@ type htyp =
   | Num
   | Hole;
 
+[@deriving compare]
 type hexp =
   | Var(string)
   | Lam(string, hexp)
@@ -65,4 +66,6 @@ type typctx = TypCtx.t(htyp);
 
 exception Unimplemented;
 
+let erase_exp: zexp => hexp;
+let syn: (typctx, hexp) => option(htyp);
 let syn_action: (typctx, (zexp, htyp), action) => option((zexp, htyp));

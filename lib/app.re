@@ -136,6 +136,51 @@ and paren = (inner: pexp, outer: pexp, side: side): string => {
   };
 };
 
+let check_for_theorem_violation =
+    (
+      a: Hazelnut.action,
+      e: Hazelnut.zexp,
+      t: Hazelnut.htyp,
+      e': Hazelnut.zexp,
+      t': Hazelnut.htyp,
+    )
+    : option(string) => {
+  let e = Hazelnut.erase_exp(e);
+  let e' = Hazelnut.erase_exp(e');
+
+  let theorem_1 = {
+    let warning = Some("Theorem 1 violation (Action sensibility)");
+
+    switch (Hazelnut.syn(Hazelnut.TypCtx.empty, e')) {
+    | Some(syn_t') =>
+      if (Hazelnut.compare_htyp(t', syn_t') == 0) {
+        None;
+      } else {
+        warning;
+      }
+    | None => warning
+    };
+  };
+
+  let theorem_2 =
+    switch (a) {
+    | Move(_) =>
+      if (Hazelnut.compare_hexp(e, e') == 0
+          && Hazelnut.compare_htyp(t, t') == 0) {
+        None;
+      } else {
+        Some("Theorem 2 violation (movement erasure invariance)");
+      }
+    | _ => None
+    };
+
+  switch (theorem_1, theorem_2) {
+  | (Some(_) as warning, _)
+  | (_, Some(_) as warning) => warning
+  | (None, None) => None
+  };
+};
+
 [@deriving (sexp, fields, compare)]
 type state = {
   e: Hazelnut.zexp,
@@ -152,15 +197,15 @@ module Model = {
 
   let set = (s: state): t => {state: s};
 
-  let init = (): t =>
-    set({
-      e: Cursor(EHole),
-      t: Hole,
-      warning: None,
-      var_input: "",
-      lam_input: "",
-      lit_input: "",
-    });
+  let init = (): t => {
+    let e: Hazelnut.zexp = Cursor(EHole);
+
+    switch (Hazelnut.syn(Hazelnut.TypCtx.empty, Hazelnut.erase_exp(e))) {
+    | Some(t) =>
+      set({e, t, warning: None, var_input: "", lam_input: "", lit_input: ""})
+    | None => failwith("Invalid initial expression")
+    };
+  };
 
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };
@@ -205,7 +250,16 @@ let apply_action =
           );
 
         switch (result) {
-        | Some((e, t)) => Model.set({...state, e, t, warning: None})
+        | Some((e, t)) =>
+          let new_state = {...state, e, t, warning: None};
+
+          let violation =
+            check_for_theorem_violation(action, state.e, state.t, e, t);
+
+          switch (violation) {
+          | Some(_) as warning => Model.set({...new_state, warning})
+          | None => Model.set(new_state)
+          };
         | None => warn("Invalid action")
         };
       }) {
@@ -326,12 +380,12 @@ let view =
           ),
           button(
             "Construct Var",
-            Action.HazelnutAction(Construct(Var(state.var_input))), // TODO: Don't hardcode value
+            Action.HazelnutAction(Construct(Var(state.var_input))),
             Some((Var, state.var_input)),
           ),
           button(
             "Construct Lam",
-            Action.HazelnutAction(Construct(Lam(state.lam_input))), // TODO: Don't hardcode value
+            Action.HazelnutAction(Construct(Lam(state.lam_input))),
             Some((Lam, state.lam_input)),
           ),
           button(
