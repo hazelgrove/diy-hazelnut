@@ -1,5 +1,0 @@
-(library
- (name hazelnut_test)
- (libraries async_kernel incr_dom_testing app_lib js_of_ocaml)
- (preprocess
-  (pps ppx_jane)))

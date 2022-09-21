@@ -1,19 +1,7 @@
 open Core;
 open Incr_dom;
+open Monad_lib.Monad;
 module Hazelnut = Hazelnut_lib.Hazelnut;
-
-// Maybe Monad
-let ( let* ) = (x: option('a), f: 'a => option('b)): option('b) =>
-  switch (x) {
-  | Some(x) => f(x)
-  | None => None
-  };
-
-// Maybe Monad
-let (let+) = (x: option('a), f: 'a => 'b): option('b) => {
-  let* x = x;
-  Some(f(x));
-};
 
 // A combination of all Hazelnut types for purposes of printing
 type pexp =
@@ -144,42 +132,45 @@ let check_for_theorem_violation =
       e': Hazelnut.zexp,
       t': Hazelnut.htyp,
     )
-    : option(string) => {
-  let e = Hazelnut.erase_exp(e);
-  let e' = Hazelnut.erase_exp(e');
+    : option(string) =>
+  try({
+    let e = Hazelnut.erase_exp(e);
+    let e' = Hazelnut.erase_exp(e');
 
-  let theorem_1 = {
-    let warning = Some("Theorem 1 violation (Action sensibility)");
+    let theorem_1 = {
+      let warning = Some("Theorem 1 violation (Action sensibility)");
 
-    switch (Hazelnut.syn(Hazelnut.TypCtx.empty, e')) {
-    | Some(syn_t') =>
-      if (Hazelnut.compare_htyp(t', syn_t') == 0) {
-        None;
-      } else {
-        warning;
-      }
-    | None => warning
-    };
-  };
-
-  let theorem_2 =
-    switch (a) {
-    | Move(_) =>
-      if (Hazelnut.compare_hexp(e, e') == 0
-          && Hazelnut.compare_htyp(t, t') == 0) {
-        None;
-      } else {
-        Some("Theorem 2 violation (movement erasure invariance)");
-      }
-    | _ => None
+      switch (Hazelnut.syn(Hazelnut.TypCtx.empty, e')) {
+      | Some(syn_t') =>
+        if (Hazelnut.compare_htyp(t', syn_t') == 0) {
+          None;
+        } else {
+          warning;
+        }
+      | None => warning
+      };
     };
 
-  switch (theorem_1, theorem_2) {
-  | (Some(_) as warning, _)
-  | (_, Some(_) as warning) => warning
-  | (None, None) => None
+    let theorem_2 =
+      switch (a) {
+      | Move(_) =>
+        if (Hazelnut.compare_hexp(e, e') == 0
+            && Hazelnut.compare_htyp(t, t') == 0) {
+          None;
+        } else {
+          Some("Theorem 2 violation (movement erasure invariance)");
+        }
+      | _ => None
+      };
+
+    switch (theorem_1, theorem_2) {
+    | (Some(_) as warning, _)
+    | (_, Some(_) as warning) => warning
+    | (None, None) => None
+    };
+  }) {
+  | Hazelnut.Unimplemented => None
   };
-};
 
 [@deriving (sexp, fields, compare)]
 type state = {
@@ -197,15 +188,15 @@ module Model = {
 
   let set = (s: state): t => {state: s};
 
-  let init = (): t => {
-    let e: Hazelnut.zexp = Cursor(EHole);
-
-    switch (Hazelnut.syn(Hazelnut.TypCtx.empty, Hazelnut.erase_exp(e))) {
-    | Some(t) =>
-      set({e, t, warning: None, var_input: "", lam_input: "", lit_input: ""})
-    | None => failwith("Invalid initial expression")
-    };
-  };
+  let init = (): t =>
+    set({
+      e: Cursor(EHole),
+      t: Hole,
+      warning: None,
+      var_input: "",
+      lam_input: "",
+      lit_input: "",
+    });
 
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
 };

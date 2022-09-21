@@ -1,4 +1,6 @@
-all: fmt build open
+HTML_FILE=$(shell pwd)/_build/default/bin/index.html
+
+all: fmt build
 
 fmt:
 	refmt */*.re --in-place
@@ -7,8 +9,8 @@ fmt:
 build:
 	dune build bin/{main.bc.js,index.html}
 
-open:
-	open _build/default/bin/index.html
+url:
+	@echo "file://$(HTML_FILE)"
 
 clean:
 	dune clean

@@ -1,5 +1,5 @@
 (library
  (name hazelnut_lib)
- (libraries core incr_dom)
+ (libraries core incr_dom monad_lib)
  (preprocess
   (pps ppx_jane)))
