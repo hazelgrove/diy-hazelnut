@@ -68,4 +68,6 @@ exception Unimplemented;
 
 let erase_exp: zexp => hexp;
 let syn: (typctx, hexp) => option(htyp);
+let ana: (typctx, hexp, htyp) => bool;
 let syn_action: (typctx, (zexp, htyp), action) => option((zexp, htyp));
+let ana_action: (typctx, zexp, action, htyp) => option(zexp);

@@ -88,6 +88,16 @@ let syn = (ctx: typctx, e: hexp): option(htyp) => {
   let _ = e;
 
   raise(Unimplemented);
+}
+
+and ana = (ctx: typctx, e: hexp, t: htyp): bool => {
+  // Used to suppress unused variable warnings
+  // Okay to remove
+  let _ = ctx;
+  let _ = e;
+  let _ = t;
+
+  raise(Unimplemented);
 };
 
 let syn_action =
@@ -98,6 +108,17 @@ let syn_action =
   let _ = e;
   let _ = t;
   let _ = a;
+
+  raise(Unimplemented);
+}
+
+and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
+  // Used to suppress unused variable warnings
+  // Okay to remove
+  let _ = ctx;
+  let _ = e;
+  let _ = a;
+  let _ = t;
 
   raise(Unimplemented);
 };
