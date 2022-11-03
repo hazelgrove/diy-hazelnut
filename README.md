@@ -77,7 +77,9 @@ Now it's your turn to implement Hazelnut!
 
 First of all, it's important that you understand what Hazelnut is and how it works. Read *[Hazelnut: A Bidirectionally Typed Structure Editor Calculus][hazelnut_paper]* if you haven't already. You don't have to understand everything right at this moment, but make sure that you have a good overview of how it all works.
 
-You'll be using the Reason programming language, which essentially just OCaml with a more JavaScript-like syntax. It's the primary language used to implement [Hazel](https://github.com/hazelgrove/hazel). If you're already familiar with OCaml, but not Reason, [this website](https://reasonml.github.io/en/try) can be used to translate between OCaml and Reason. But if you'd really just prefer to use OCaml, you can rename `hazelnut/hazelnut.re` to `hazelnut/hazelnut.ml`, then convert the code in it to OCaml.
+You'll be using the Reason programming language, which essentially just OCaml with a more JavaScript-like syntax. It's the primary language used to implement [Hazel](https://github.com/hazelgrove/hazel). If you're already familiar with OCaml, but not Reason, [this website](https://reasonml.github.io/en/try) can be used to translate between OCaml and Reason. But if you'd really just prefer to use OCaml, you can convert code from OCaml to Reason using `refmt` as follows:
+
+```refmt <file>.re -p ml > <file>.ml; rm <file>.re```
 
 All the code you will write should go in the [`hazelnut/hazelnut.re`](hazelnut/hazelnut.re). The starter code in there has been provided for your convenience, but you're free to modify it however you like. Modifying any other files (especially `hazelnut/hazelnut.rei`) isn't recommended, since it might cause unexpected problems.
 
