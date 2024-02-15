@@ -4,76 +4,92 @@ open Sexplib.Std;
 let compare_string = String.compare;
 let compare_int = Int.compare;
 
-[@deriving (sexp, compare)]
-type htyp =
-  | Arrow(htyp, htyp)
-  | Num
-  | Hole;
+module Htyp = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Arrow(t, t)
+    | Num
+    | Hole;
+};
 
-[@deriving (sexp, compare)]
-type hexp =
-  | Var(string)
-  | Lam(string, hexp)
-  | Ap(hexp, hexp)
-  | Lit(int)
-  | Plus(hexp, hexp)
-  | Asc(hexp, htyp)
-  | EHole
-  | NEHole(hexp);
+module Hexp = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Var(string)
+    | Lam(string, t)
+    | Ap(t, t)
+    | Lit(int)
+    | Plus(t, t)
+    | Asc(t, Htyp.t)
+    | EHole
+    | NEHole(t);
+};
 
-[@deriving (sexp, compare)]
-type ztyp =
-  | Cursor(htyp)
-  | LArrow(ztyp, htyp)
-  | RArrow(htyp, ztyp);
+module Ztyp = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Cursor(Htyp.t)
+    | LArrow(t, Htyp.t)
+    | RArrow(Htyp.t, t);
+};
 
-[@deriving (sexp, compare)]
-type zexp =
-  | Cursor(hexp)
-  | Lam(string, zexp)
-  | LAp(zexp, hexp)
-  | RAp(hexp, zexp)
-  | LPlus(zexp, hexp)
-  | RPlus(hexp, zexp)
-  | LAsc(zexp, htyp)
-  | RAsc(hexp, ztyp)
-  | NEHole(zexp);
+module Zexp = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Cursor(Hexp.t)
+    | Lam(string, t)
+    | LAp(t, Hexp.t)
+    | RAp(Hexp.t, t)
+    | LPlus(t, Hexp.t)
+    | RPlus(Hexp.t, t)
+    | LAsc(t, Htyp.t)
+    | RAsc(Hexp.t, Ztyp.t)
+    | NEHole(t);
+};
 
-[@deriving (sexp, compare)]
-type child =
-  | One
-  | Two;
+module Child = {
+  [@deriving (sexp, compare)]
+  type t =
+    | One
+    | Two;
+};
 
-[@deriving (sexp, compare)]
-type dir =
-  | Child(child)
-  | Parent;
+module Dir = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Child(Child.t)
+    | Parent;
+};
 
-[@deriving (sexp, compare)]
-type shape =
-  | Arrow
-  | Num
-  | Asc
-  | Var(string)
-  | Lam(string)
-  | Ap
-  | Lit(int)
-  | Plus
-  | NEHole;
+module Shape = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Arrow
+    | Num
+    | Asc
+    | Var(string)
+    | Lam(string)
+    | Ap
+    | Lit(int)
+    | Plus
+    | NEHole;
+};
 
-[@deriving (sexp, compare)]
-type action =
-  | Move(dir)
-  | Construct(shape)
-  | Del
-  | Finish;
+module Action = {
+  [@deriving (sexp, compare)]
+  type t =
+    | Move(Dir.t)
+    | Construct(Shape.t)
+    | Del
+    | Finish;
+};
 
 module TypCtx = Map.Make(String);
-type typctx = TypCtx.t(htyp);
+type typctx = TypCtx.t(Htyp.t);
 
 exception Unimplemented;
 
-let erase_exp = (e: zexp): hexp => {
+let erase_exp = (e: Zexp.t): Hexp.t => {
   // Used to suppress unused variable warnings
   // Okay to remove
   let _ = e;
@@ -81,7 +97,7 @@ let erase_exp = (e: zexp): hexp => {
   raise(Unimplemented);
 };
 
-let syn = (ctx: typctx, e: hexp): option(htyp) => {
+let syn = (ctx: typctx, e: Hexp.t): option(Htyp.t) => {
   // Used to suppress unused variable warnings
   // Okay to remove
   let _ = ctx;
@@ -90,7 +106,7 @@ let syn = (ctx: typctx, e: hexp): option(htyp) => {
   raise(Unimplemented);
 }
 
-and ana = (ctx: typctx, e: hexp, t: htyp): bool => {
+and ana = (ctx: typctx, e: Hexp.t, t: Htyp.t): bool => {
   // Used to suppress unused variable warnings
   // Okay to remove
   let _ = ctx;
@@ -101,7 +117,8 @@ and ana = (ctx: typctx, e: hexp, t: htyp): bool => {
 };
 
 let syn_action =
-    (ctx: typctx, (e: zexp, t: htyp), a: action): option((zexp, htyp)) => {
+    (ctx: typctx, (e: Zexp.t, t: Htyp.t), a: Action.t)
+    : option((Zexp.t, Htyp.t)) => {
   // Used to suppress unused variable warnings
   // Okay to remove
   let _ = ctx;
@@ -112,7 +129,8 @@ let syn_action =
   raise(Unimplemented);
 }
 
-and ana_action = (ctx: typctx, e: zexp, a: action, t: htyp): option(zexp) => {
+and ana_action =
+    (ctx: typctx, e: Zexp.t, a: Action.t, t: Htyp.t): option(Zexp.t) => {
   // Used to suppress unused variable warnings
   // Okay to remove
   let _ = ctx;
