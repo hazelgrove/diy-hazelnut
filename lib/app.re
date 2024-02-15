@@ -4,26 +4,28 @@ open Monad_lib.Monad;
 module Hazelnut = Hazelnut_lib.Hazelnut;
 
 // A combination of all Hazelnut types for purposes of printing
-type pexp =
-  | Cursor(pexp)
-  | Arrow(pexp, pexp)
-  | Num
-  | Var(string)
-  | Lam(string, pexp)
-  | Ap(pexp, pexp)
-  | Lit(int)
-  | Plus(pexp, pexp)
-  | Asc(pexp, pexp)
-  | EHole
-  | NEHole(pexp);
+module Pexp = {
+  type t =
+    | Cursor(t)
+    | Arrow(t, t)
+    | Num
+    | Var(string)
+    | Lam(string, t)
+    | Ap(t, t)
+    | Lit(int)
+    | Plus(t, t)
+    | Asc(t, t)
+    | EHole
+    | NEHole(t);
+};
 
-let rec pexp_of_htyp: Hazelnut.htyp => pexp =
+let rec pexp_of_htyp: Hazelnut.Htyp.t => Pexp.t =
   fun
   | Arrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_htyp(t2))
   | Num => Num
   | Hole => EHole;
 
-let rec pexp_of_hexp: Hazelnut.hexp => pexp =
+let rec pexp_of_hexp: Hazelnut.Hexp.t => Pexp.t =
   fun
   | Var(x) => Var(x)
   | Lam(x, e) => Lam(x, pexp_of_hexp(e))
@@ -34,13 +36,13 @@ let rec pexp_of_hexp: Hazelnut.hexp => pexp =
   | EHole => EHole
   | NEHole(e) => NEHole(pexp_of_hexp(e));
 
-let rec pexp_of_ztyp: Hazelnut.ztyp => pexp =
+let rec pexp_of_ztyp: Hazelnut.Ztyp.t => Pexp.t =
   fun
   | Cursor(t) => Cursor(pexp_of_htyp(t))
   | LArrow(t1, t2) => Arrow(pexp_of_ztyp(t1), pexp_of_htyp(t2))
   | RArrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_ztyp(t2));
 
-let rec pexp_of_zexp: Hazelnut.zexp => pexp =
+let rec pexp_of_zexp: Hazelnut.Zexp.t => Pexp.t =
   fun
   | Cursor(e) => Cursor(pexp_of_hexp(e))
   | Lam(x, e) => Lam(x, pexp_of_zexp(e))
@@ -53,7 +55,7 @@ let rec pexp_of_zexp: Hazelnut.zexp => pexp =
   | NEHole(e) => NEHole(pexp_of_zexp(e));
 
 // Lower is tighter
-let rec prec: pexp => int =
+let rec prec: Pexp.t => int =
   fun
   | Cursor(e) => prec(e)
   | Arrow(_) => 1
@@ -67,12 +69,14 @@ let rec prec: pexp => int =
   | EHole => 0
   | NEHole(_) => 0;
 
-type side =
-  | Left
-  | Right
-  | Atom;
+module Side = {
+  type t =
+    | Left
+    | Right
+    | Atom;
+};
 
-let rec assoc: pexp => side =
+let rec assoc: Pexp.t => Side.t =
   fun
   | Cursor(e) => assoc(e)
   | Arrow(_) => Right
@@ -86,25 +90,25 @@ let rec assoc: pexp => side =
   | EHole => Atom
   | NEHole(_) => Atom;
 
-let rec string_of_pexp: pexp => string =
+let rec string_of_pexp: Pexp.t => string =
   fun
   | Cursor(e) => "👉" ++ string_of_pexp(e) ++ "👈"
   | Arrow(t1, t2) as outer =>
-    paren(t1, outer, Left) ++ " -> " ++ paren(t2, outer, Right)
+    paren(t1, outer, Side.Left) ++ " -> " ++ paren(t2, outer, Side.Right)
   | Num => "Num"
   | Var(x) => x
   | Lam(x, e) => "fun " ++ x ++ " -> { " ++ string_of_pexp(e) ++ " }"
   | Ap(e1, e2) as outer =>
-    paren(e1, outer, Left) ++ " " ++ paren(e2, outer, Right)
+    paren(e1, outer, Side.Left) ++ " " ++ paren(e2, outer, Side.Right)
   | Lit(n) => string_of_int(n)
   | Plus(e1, e2) as outer =>
-    paren(e1, outer, Left) ++ " + " ++ paren(e2, outer, Right)
+    paren(e1, outer, Side.Left) ++ " + " ++ paren(e2, outer, Side.Right)
   | Asc(e, t) as outer =>
-    paren(e, outer, Left) ++ ": " ++ paren(t, outer, Right)
+    paren(e, outer, Side.Left) ++ ": " ++ paren(t, outer, Side.Right)
   | EHole => "[ ]"
   | NEHole(e) => "[ " ++ string_of_pexp(e) ++ " ]"
 
-and paren = (inner: pexp, outer: pexp, side: side): string => {
+and paren = (inner: Pexp.t, outer: Pexp.t, side: Side.t): string => {
   let unparenned = string_of_pexp(inner);
   let parenned = "(" ++ unparenned ++ ")";
 
@@ -117,8 +121,8 @@ and paren = (inner: pexp, outer: pexp, side: side): string => {
     parenned;
   } else {
     switch (assoc(inner), side) {
-    | (Left, Right)
-    | (Right, Left) => parenned
+    | (Side.Left, Side.Right)
+    | (Side.Right, Side.Left) => parenned
     | _ => unparenned
     };
   };
@@ -126,11 +130,11 @@ and paren = (inner: pexp, outer: pexp, side: side): string => {
 
 let check_for_theorem_violation =
     (
-      a: Hazelnut.action,
-      e: Hazelnut.zexp,
-      t: Hazelnut.htyp,
-      e': Hazelnut.zexp,
-      t': Hazelnut.htyp,
+      a: Hazelnut.Action.t,
+      e: Hazelnut.Zexp.t,
+      t: Hazelnut.Htyp.t,
+      e': Hazelnut.Zexp.t,
+      t': Hazelnut.Htyp.t,
     )
     : option(string) =>
   try({
@@ -142,7 +146,7 @@ let check_for_theorem_violation =
 
       switch (Hazelnut.syn(Hazelnut.TypCtx.empty, e')) {
       | Some(syn_t') =>
-        if (Hazelnut.compare_htyp(t', syn_t') == 0) {
+        if (Hazelnut.Htyp.compare(t', syn_t') == 0) {
           None;
         } else {
           warning;
@@ -154,8 +158,8 @@ let check_for_theorem_violation =
     let theorem_2 =
       switch (a) {
       | Move(_) =>
-        if (Hazelnut.compare_hexp(e, e') == 0
-            && Hazelnut.compare_htyp(t, t') == 0) {
+        if (Hazelnut.Hexp.compare(e, e') == 0
+            && Hazelnut.Htyp.compare(t, t') == 0) {
           None;
         } else {
           Some("Theorem 2 violation (movement erasure invariance)");
@@ -174,8 +178,8 @@ let check_for_theorem_violation =
 
 [@deriving (sexp, fields, compare)]
 type state = {
-  e: Hazelnut.zexp,
-  t: Hazelnut.htyp,
+  e: Hazelnut.Zexp.t,
+  t: Hazelnut.Htyp.t,
   warning: option(string),
   var_input: string,
   lam_input: string,
@@ -210,7 +214,7 @@ module Action = {
 
   [@deriving sexp]
   type action =
-    | HazelnutAction(Hazelnut.action)
+    | HazelnutAction(Hazelnut.Action.t)
     | UpdateInput(input_location, string)
     | ShowWarning(string);
 
