@@ -1,68 +1,70 @@
 open Alcotest;
-open Hazelnut_lib.Hazelnut;
-open Test_interfaces;
+open Test_interface;
+module Hazelnut = Hazelnut_lib.Hazelnut;
 
 let test_eetop = () => {
-  let ze: zexp = Cursor(Var("x"));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Var("x");
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = Cursor(Var("x"));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Var("x");
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeascl = () => {
-  let ze: zexp = LAsc(Cursor(Lam("f", Lit(1))), Arrow(Num, Num));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Asc(Lam("f", Lit(1)), Arrow(Num, Num));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t =
+    LAsc(Cursor(Lam("f", Lit(1))), Arrow(Num, Num));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Asc(Lam("f", Lit(1)), Arrow(Num, Num));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeascr = () => {
-  let ze: zexp = RAsc(Lam("f", Lit(1)), Cursor(Arrow(Num, Num)));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Asc(Lam("f", Lit(1)), Arrow(Num, Num));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t =
+    RAsc(Lam("f", Lit(1)), Cursor(Arrow(Num, Num)));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Asc(Lam("f", Lit(1)), Arrow(Num, Num));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eelam = () => {
-  let ze: zexp = Lam("f", Cursor(Lit(1)));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Lam("f", Lit(1));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = Lam("f", Cursor(Lit(1)));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Lam("f", Lit(1));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeapl = () => {
-  let ze: zexp = LAp(Cursor(Lam("f", Lit(1))), Var("x"));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Ap(Lam("f", Lit(1)), Var("x"));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = LAp(Cursor(Lam("f", Lit(1))), Var("x"));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Ap(Lam("f", Lit(1)), Var("x"));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeapr = () => {
-  let ze: zexp = RAp(Lam("f", Lit(1)), Cursor(Var("x")));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Ap(Lam("f", Lit(1)), Var("x"));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = RAp(Lam("f", Lit(1)), Cursor(Var("x")));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Ap(Lam("f", Lit(1)), Var("x"));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeplusl = () => {
-  let ze: zexp = LPlus(Cursor(Var("x")), Var("y"));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Plus(Var("x"), Var("y"));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = LPlus(Cursor(Var("x")), Var("y"));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Plus(Var("x"), Var("y"));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eeplusr = () => {
-  let ze: zexp = RPlus(Var("x"), Cursor(Var("y")));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = Plus(Var("x"), Var("y"));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = RPlus(Var("x"), Cursor(Var("y")));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = Plus(Var("x"), Var("y"));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let test_eenehole = () => {
-  let ze: zexp = NEHole(Cursor(Lam("f", Lit(1))));
-  let given: hexp = erase_exp(ze);
-  let expected: hexp = NEHole(Lam("f", Lit(1)));
-  check(hexp_typ, "same hexp", given, expected);
+  let ze: Hazelnut.Zexp.t = NEHole(Cursor(Lam("f", Lit(1))));
+  let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
+  let expected: Hazelnut.Hexp.t = NEHole(Lam("f", Lit(1)));
+  check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 
 let erase_exp_tests = [
