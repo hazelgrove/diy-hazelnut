@@ -73,7 +73,7 @@ make clean
 
 To test your implementation:
 ```sh
-make test_impl
+make test
 ```
 
 ## Implementing Hazelnut
@@ -117,9 +117,6 @@ If anything unexpected happens, a warning will appear at the bottom. Here's what
 | Unimplemented     | You called upon an operation that you haven't implemented yet.                                                                                         |
 | Theorem violation | Your implementation has a bug that caused it to violate a Hazelnut metatheorem. Note: This won't catch every metatheorem violation, only some of them. |
 
-## Testing your implementation
-
-We include a test suite to test your implementation. Run `make test_impl` at the root of the project directory to run the test suite.
 
 ## Using the Maybe Monad
 
