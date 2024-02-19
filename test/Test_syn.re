@@ -90,6 +90,22 @@ let test_splus_2 = () => {
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
 };
 
+let test_shole_1 = () => {
+  let ctx: typctx = TypCtx.empty;
+  let he: Hazelnut.Hexp.t = EHole;
+  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
+  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
+  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+};
+
+let test_shole_2 = () => {
+  let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Hole);
+  let he: Hazelnut.Hexp.t = Var("x");
+  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
+  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
+  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+};
+
 let syn_tests = [
   ("test_sasc_1", `Quick, test_sasc_1),
   ("test_sasc_2", `Quick, test_sasc_2),
@@ -101,4 +117,6 @@ let syn_tests = [
   ("test_snum_2", `Quick, test_snum_2),
   ("test_splus_1", `Quick, test_splus_1),
   ("test_splus_2", `Quick, test_splus_2),
+  ("test_shole_1", `Quick, test_shole_1),
+  ("test_shole_2", `Quick, test_shole_2),
 ];
