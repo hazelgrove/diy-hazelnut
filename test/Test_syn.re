@@ -30,7 +30,6 @@ let test_svar_1 = () => {
   let he: Hazelnut.Hexp.t = Var("x");
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = None;
-
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
 };
 
@@ -39,7 +38,23 @@ let test_svar_2 = () => {
   let he: Hazelnut.Hexp.t = Var("x");
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
+  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+};
 
+let test_sap_1 = () => {
+  let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Num, Num));
+  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lit(1));
+  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
+  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
+  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+};
+
+let test_sap_2 = () => {
+  let ctx: typctx =
+    TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Arrow(Num, Num), Num));
+  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lam("y", Lit(1)));
+  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
+  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
 };
 
@@ -48,4 +63,6 @@ let syn_tests = [
   ("test_sasc_2", `Quick, test_sasc_2),
   ("test_svar_1", `Quick, test_svar_1),
   ("test_svar_2", `Quick, test_svar_2),
+  ("test_sap_1", `Quick, test_sap_1),
+  ("test_sap_2", `Quick, test_sap_2),
 ];
