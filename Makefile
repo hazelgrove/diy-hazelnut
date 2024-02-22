@@ -1,5 +1,7 @@
 HTML_FILE=$(shell pwd)/_build/default/bin/index.html
 
+.PHONY: all fmt build url clean deps test
+
 all: fmt build
 
 fmt:
@@ -19,6 +21,5 @@ clean:
 deps:
 	opam install dune reason incr_dom ocaml-lsp-server
 
-.PHONY: test
 test:
 	dune test
