@@ -1,73 +1,91 @@
-[@deriving (sexp, compare)]
-type htyp =
-  | Arrow(htyp, htyp)
-  | Num
-  | Hole;
+module Htyp: {
+  [@deriving (sexp, compare)]
+  type t =
+    | Arrow(t, t)
+    | Num
+    | Hole;
+};
 
-[@deriving compare]
-type hexp =
-  | Var(string)
-  | Lam(string, hexp)
-  | Ap(hexp, hexp)
-  | Lit(int)
-  | Plus(hexp, hexp)
-  | Asc(hexp, htyp)
-  | EHole
-  | NEHole(hexp);
+module Hexp: {
+  [@deriving (sexp, compare)]
+  type t =
+    | Var(string)
+    | Lam(string, t)
+    | Ap(t, t)
+    | Lit(int)
+    | Plus(t, t)
+    | Asc(t, Htyp.t)
+    | EHole
+    | NEHole(t);
+};
 
-type ztyp =
-  | Cursor(htyp)
-  | LArrow(ztyp, htyp)
-  | RArrow(htyp, ztyp);
+module Ztyp: {
+  [@deriving (sexp, compare)]
+  type t =
+    | Cursor(Htyp.t)
+    | LArrow(t, Htyp.t)
+    | RArrow(Htyp.t, t);
+};
 
-[@deriving (sexp, compare)]
-type zexp =
-  | Cursor(hexp)
-  | Lam(string, zexp)
-  | LAp(zexp, hexp)
-  | RAp(hexp, zexp)
-  | LPlus(zexp, hexp)
-  | RPlus(hexp, zexp)
-  | LAsc(zexp, htyp)
-  | RAsc(hexp, ztyp)
-  | NEHole(zexp);
+module Zexp: {
+  [@deriving (sexp, compare)]
+  type t =
+    | Cursor(Hexp.t)
+    | Lam(string, t)
+    | LAp(t, Hexp.t)
+    | RAp(Hexp.t, t)
+    | LPlus(t, Hexp.t)
+    | RPlus(Hexp.t, t)
+    | LAsc(t, Htyp.t)
+    | RAsc(Hexp.t, Ztyp.t)
+    | NEHole(t);
+};
 
-type child =
-  | One
-  | Two;
+module Child: {
+  type t =
+    | One
+    | Two;
+};
 
-type dir =
-  | Child(child)
-  | Parent;
+module Dir: {
+  type t =
+    | Child(Child.t)
+    | Parent;
+};
 
-type shape =
-  | Arrow
-  | Num
-  | Asc
-  | Var(string)
-  | Lam(string)
-  | Ap
-  | Lit(int)
-  | Plus
-  | NEHole;
+module Shape: {
+  type t =
+    | Arrow
+    | Num
+    | Asc
+    | Var(string)
+    | Lam(string)
+    | Ap
+    | Lit(int)
+    | Plus
+    | NEHole;
+};
 
-[@deriving (sexp, compare)]
-type action =
-  | Move(dir)
-  | Construct(shape)
-  | Del
-  | Finish;
+module Action: {
+  [@deriving (sexp, compare)]
+  type t =
+    | Move(Dir.t)
+    | Construct(Shape.t)
+    | Del
+    | Finish;
+};
 
 module TypCtx: {
   type t('a) = Map.Make(String).t('a);
   let empty: t('a);
 };
-type typctx = TypCtx.t(htyp);
+type typctx = TypCtx.t(Htyp.t);
 
 exception Unimplemented;
 
-let erase_exp: zexp => hexp;
-let syn: (typctx, hexp) => option(htyp);
-let ana: (typctx, hexp, htyp) => bool;
-let syn_action: (typctx, (zexp, htyp), action) => option((zexp, htyp));
-let ana_action: (typctx, zexp, action, htyp) => option(zexp);
+let erase_exp: Zexp.t => Hexp.t;
+let syn: (typctx, Hexp.t) => option(Htyp.t);
+let ana: (typctx, Hexp.t, Htyp.t) => bool;
+let syn_action:
+  (typctx, (Zexp.t, Htyp.t), Action.t) => option((Zexp.t, Htyp.t));
+let ana_action: (typctx, Zexp.t, Action.t, Htyp.t) => option(Zexp.t);
