@@ -39,3 +39,17 @@ let zexp_print = (ze: option(Hazelnut.Zexp.t)): string =>
   };
 
 let zexp_typ = testable(Fmt.using(zexp_print, Fmt.string), zexp_eq);
+
+let zexp_htyp_eq = (ze_t1: option((Hazelnut.Zexp.t,Hazelnut.Htyp.t)), ze_t2: option((Hazelnut.Zexp.t,Hazelnut.Htyp.t))): bool => 
+  switch (ze_t1,ze_t2) {
+    | (Some((e1,t1)),Some((e2,t2))) => Hazelnut.Zexp.compare(e1, e2) == 0 && Hazelnut.Htyp.compare(t1, t2) == 0
+    | _ => false
+  };
+  
+let zexp_htyp_print = (ze_t: option((Hazelnut.Zexp.t,Hazelnut.Htyp.t))): string =>
+  switch (ze_t) {
+  | Some((e, _)) => Hazelnut.Zexp.show(e); // have to show both somehow
+  | _ => "None"
+  };
+
+let zexp_htyp = testable(Fmt.using(zexp_htyp_print, Fmt.string), zexp_htyp_eq);
