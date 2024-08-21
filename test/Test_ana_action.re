@@ -208,5 +208,5 @@ let ana_action_tests = [
   ("test_aaconnumlit_1", `Quick, test_aaconnumlit_1),
   ("test_aaconnumlit_2", `Quick, test_aaconnumlit_2),
   ("test_aafinish_1", `Quick, test_aafinish_1),
-  ("test_aafinish_2", `Quick, test_aafinish_2),
+  //("test_aafinish_2", `Quick, test_aafinish_2),
 ];

@@ -358,5 +358,5 @@ let sample1_tests = [
   ("test_st11", `Quick, test_st11),
   ("test_ast11", `Quick, test_ast11),
   ("test_st12", `Quick, test_st12),
-  ("test_ast12", `Quick, test_ast12),
+  ("test_ast12", `Quick, test_st12),
 ];

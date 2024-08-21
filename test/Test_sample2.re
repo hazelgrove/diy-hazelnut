@@ -35,7 +35,7 @@ let test_st15 = () => {
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((RAp(Var("incr"), Cursor(EHole)), Arrow(Num, Num)));
+    Some((RAp(Var("incr"), Cursor(EHole)), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
@@ -43,7 +43,7 @@ let test_ast15 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t = Cursor(Var("incr"));
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Ap);
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), Cursor(EHole)));
@@ -53,14 +53,14 @@ let test_ast15 = () => {
 let test_st16 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t = RAp(Var("incr"), Cursor(EHole));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Var("incr"));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), NEHole(Cursor(Var("incr")))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -69,7 +69,7 @@ let test_ast16 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t = RAp(Var("incr"), Cursor(EHole));
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Var("incr"));
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), NEHole(Cursor(Var("incr")))));
@@ -79,14 +79,14 @@ let test_ast16 = () => {
 let test_st17 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t = RAp(Var("incr"), NEHole(Cursor(Var("incr"))));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Ap);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(EHole)))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -95,7 +95,7 @@ let test_ast17 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t = RAp(Var("incr"), NEHole(Cursor(Var("incr"))));
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Ap);
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(EHole)))));
@@ -106,14 +106,14 @@ let test_st18 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(EHole))));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Lit(3));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(Lit(3))))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -123,7 +123,7 @@ let test_ast18 = () => {
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(EHole))));
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Lit(3));
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(Lit(3))))));
@@ -134,14 +134,14 @@ let test_st19 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(Lit(3)))));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), NEHole(Cursor(Ap(Var("incr"), Lit(3))))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -151,7 +151,7 @@ let test_ast19 = () => {
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(RAp(Var("incr"), Cursor(Lit(3)))));
   let a: Hazelnut.Action.t = Move(Parent);
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), NEHole(Cursor(Ap(Var("incr"), Lit(3))))));
@@ -162,14 +162,14 @@ let test_st20 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(Cursor(Ap(Var("incr"), Lit(3)))));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), Cursor(NEHole(Ap(Var("incr"), Lit(3))))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -179,7 +179,7 @@ let test_ast20 = () => {
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), NEHole(Cursor(Ap(Var("incr"), Lit(3)))));
   let a: Hazelnut.Action.t = Move(Parent);
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), Cursor(NEHole(Ap(Var("incr"), Lit(3))))));
@@ -190,14 +190,14 @@ let test_st21 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), Cursor(NEHole(Ap(Var("incr"), Lit(3)))));
-  let t: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Finish;
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Some((
       RAp(Var("incr"), Cursor(Ap(Var("incr"), Lit(3)))),
-      Arrow(Num, Num),
+      Num,
     ));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
@@ -207,7 +207,7 @@ let test_ast21 = () => {
   let ze: Hazelnut.Zexp.t =
     RAp(Var("incr"), Cursor(NEHole(Ap(Var("incr"), Lit(3)))));
   let a: Hazelnut.Action.t = Finish;
-  let ht: Hazelnut.Htyp.t = Arrow(Num, Num);
+  let ht: Hazelnut.Htyp.t = Num;
   let given: option(Hazelnut.Zexp.t) = Hazelnut.ana_action(ctx, ze, a, ht);
   let expected: option(Hazelnut.Zexp.t) =
     Some(RAp(Var("incr"), Cursor(Ap(Var("incr"), Lit(3)))));
