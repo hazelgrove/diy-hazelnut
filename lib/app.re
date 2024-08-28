@@ -9,11 +9,15 @@ module Pexp = {
     | Cursor(t)
     | Arrow(t, t)
     | Num
+    | Bool
     | Var(string)
     | Lam(string, t)
+    | Let(string, t, t)
     | Ap(t, t)
     | Lit(int)
+    | BoolLit(bool)
     | Plus(t, t)
+    | Cond(t, t, t)
     | Asc(t, t)
     | EHole
     | NEHole(t);
@@ -23,15 +27,20 @@ let rec pexp_of_htyp: Hazelnut.Htyp.t => Pexp.t =
   fun
   | Arrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_htyp(t2))
   | Num => Num
+  | Bool => Bool
   | Hole => EHole;
 
 let rec pexp_of_hexp: Hazelnut.Hexp.t => Pexp.t =
   fun
   | Var(x) => Var(x)
   | Lam(x, e) => Lam(x, pexp_of_hexp(e))
+  | Let(x, e1, e2) => Let(x, pexp_of_hexp(e1), pexp_of_hexp(e2))
   | Ap(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_hexp(e2))
   | Lit(n) => Lit(n)
+  | BoolLit(b) => BoolLit(b)
   | Plus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_hexp(e2))
+  | Cond(e1, e2, e3) =>
+    Cond(pexp_of_hexp(e1), pexp_of_hexp(e2), pexp_of_hexp(e3))
   | Asc(e, t) => Asc(pexp_of_hexp(e), pexp_of_htyp(t))
   | EHole => EHole
   | NEHole(e) => NEHole(pexp_of_hexp(e));
@@ -46,10 +55,18 @@ let rec pexp_of_zexp: Hazelnut.Zexp.t => Pexp.t =
   fun
   | Cursor(e) => Cursor(pexp_of_hexp(e))
   | Lam(x, e) => Lam(x, pexp_of_zexp(e))
+  | LLet(x, e1, e2) => Let(x, pexp_of_zexp(e1), pexp_of_hexp(e2))
+  | RLet(x, e1, e2) => Let(x, pexp_of_hexp(e1), pexp_of_zexp(e2))
   | LAp(e1, e2) => Ap(pexp_of_zexp(e1), pexp_of_hexp(e2))
   | RAp(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_zexp(e2))
   | LPlus(e1, e2) => Plus(pexp_of_zexp(e1), pexp_of_hexp(e2))
   | RPlus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_zexp(e2))
+  | PCond(p, t, e) =>
+    Cond(pexp_of_zexp(p), pexp_of_hexp(t), pexp_of_hexp(e))
+  | ThenCond(p, t, e) =>
+    Cond(pexp_of_hexp(p), pexp_of_zexp(t), pexp_of_hexp(e))
+  | ElseCond(p, t, e) =>
+    Cond(pexp_of_hexp(p), pexp_of_hexp(t), pexp_of_zexp(e))
   | LAsc(e, t) => Asc(pexp_of_zexp(e), pexp_of_htyp(t))
   | RAsc(e, t) => Asc(pexp_of_hexp(e), pexp_of_ztyp(t))
   | NEHole(e) => NEHole(pexp_of_zexp(e));
@@ -60,11 +77,15 @@ let rec prec: Pexp.t => int =
   | Cursor(e) => prec(e)
   | Arrow(_) => 1
   | Num => 0
+  | Bool => 0
   | Var(_) => 0
   | Lam(_) => 0
+  | Let(_) => 0
   | Ap(_) => 2
   | Lit(_) => 0
+  | BoolLit(_) => 0
   | Plus(_) => 3
+  | Cond(_) => 0
   | Asc(_) => 4
   | EHole => 0
   | NEHole(_) => 0;
@@ -81,11 +102,15 @@ let rec assoc: Pexp.t => Side.t =
   | Cursor(e) => assoc(e)
   | Arrow(_) => Right
   | Num => Atom
+  | Bool => Atom
   | Var(_) => Atom
   | Lam(_) => Atom
+  | Let(_) => Atom
   | Ap(_) => Left
   | Lit(_) => Atom
+  | BoolLit(_) => Atom
   | Plus(_) => Left
+  | Cond(_) => Atom
   | Asc(_) => Left
   | EHole => Atom
   | NEHole(_) => Atom;
@@ -96,13 +121,31 @@ let rec string_of_pexp: Pexp.t => string =
   | Arrow(t1, t2) as outer =>
     paren(t1, outer, Side.Left) ++ " -> " ++ paren(t2, outer, Side.Right)
   | Num => "Num"
+  | Bool => "Bool"
   | Var(x) => x
   | Lam(x, e) => "fun " ++ x ++ " -> { " ++ string_of_pexp(e) ++ " }"
+  | Let(x, e1, e2) =>
+    "let "
+    ++ x
+    ++ " = { "
+    ++ string_of_pexp(e1)
+    ++ " } in { "
+    ++ string_of_pexp(e2)
+    ++ " }"
   | Ap(e1, e2) as outer =>
     paren(e1, outer, Side.Left) ++ " " ++ paren(e2, outer, Side.Right)
   | Lit(n) => string_of_int(n)
+  | BoolLit(b) => string_of_bool(b)
   | Plus(e1, e2) as outer =>
     paren(e1, outer, Side.Left) ++ " + " ++ paren(e2, outer, Side.Right)
+  | Cond(p, e1, e2) as outer =>
+    "if "
+    ++ paren(p, outer, Side.Left)
+    ++ " then { "
+    ++ string_of_pexp(e1)
+    ++ " } else { "
+    ++ string_of_pexp(e2)
+    ++ " }"
   | Asc(e, t) as outer =>
     paren(e, outer, Side.Left) ++ ": " ++ paren(t, outer, Side.Right)
   | EHole => "[ ]"
@@ -183,7 +226,9 @@ type state = {
   warning: option(string),
   var_input: string,
   lam_input: string,
+  let_input: string,
   lit_input: string,
+  bool_input: string,
 };
 
 module Model = {
@@ -199,7 +244,9 @@ module Model = {
       warning: None,
       var_input: "",
       lam_input: "",
+      let_input: "",
       lit_input: "",
+      bool_input: "true | false",
     });
 
   let cutoff = (t1: t, t2: t): bool => compare(t1, t2) == 0;
@@ -210,7 +257,9 @@ module Action = {
   type input_location =
     | Var
     | Lam
-    | Lit;
+    | Let
+    | Lit
+    | BoolLit;
 
   [@deriving sexp]
   type action =
@@ -262,7 +311,9 @@ let apply_action =
       }
     | UpdateInput(Var, var_input) => Model.set({...state, var_input})
     | UpdateInput(Lam, lam_input) => Model.set({...state, lam_input})
+    | UpdateInput(Let, let_input) => Model.set({...state, let_input})
     | UpdateInput(Lit, lit_input) => Model.set({...state, lit_input})
+    | UpdateInput(BoolLit, bool_input) => Model.set({...state, bool_input})
     | ShowWarning(warning) => Model.set({...state, warning: Some(warning)})
     };
   };
@@ -354,6 +405,11 @@ let view =
             Action.HazelnutAction(Move(Child(Two))),
             None,
           ),
+          button(
+            "Move to Child 3",
+            Action.HazelnutAction(Move(Child(Three))),
+            None,
+          ),
         ]);
 
       let construct_buttons =
@@ -366,6 +422,11 @@ let view =
           button(
             "Construct Num",
             Action.HazelnutAction(Construct(Num)),
+            None,
+          ),
+          button(
+            "Construct Bool",
+            Action.HazelnutAction(Construct(Bool)),
             None,
           ),
           button(
@@ -384,6 +445,11 @@ let view =
             Some((Lam, state.lam_input)),
           ),
           button(
+            "Construct Let",
+            Action.HazelnutAction(Construct(Let(state.let_input))),
+            Some((Let, state.let_input)),
+          ),
+          button(
             "Construct Ap",
             Action.HazelnutAction(Construct(Ap)),
             None,
@@ -400,8 +466,21 @@ let view =
             Some((Lit, state.lit_input)),
           ),
           button(
+            "Construct Bool",
+            switch (bool_of_string_opt(state.bool_input)) {
+            | Some(b) => Action.HazelnutAction(Construct(BoolLit(b)))
+            | None => Action.ShowWarning("Invalid input")
+            },
+            Some((BoolLit, state.bool_input)),
+          ),
+          button(
             "Construct Plus",
             Action.HazelnutAction(Construct(Plus)),
+            None,
+          ),
+          button(
+            "Construct Cond",
+            Action.HazelnutAction(Construct(Cond)),
             None,
           ),
           button(
