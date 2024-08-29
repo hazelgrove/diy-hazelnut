@@ -28,7 +28,6 @@ module Ztyp = {
 module Mark = {
   [@deriving (sexp, compare)]
   type t =
-    | None
     | InconsistentTypes
     | InconsistentBranches
     | InconsistentAscription
@@ -43,6 +42,7 @@ module Hexp = {
     | Lam(string, Htyp.t, t) // \x:t.e
     | Ap(t, t) // e e
     | Let(string, t, t) // let x = e in e
+    | Asc(t, Htyp.t) // e : t
     | NumLit(int) // n
     | BoolLit(bool) // b
     | Prod(t, t) // (e, e)
@@ -62,6 +62,8 @@ module Zexp = {
     | RLam(string, Htyp.t, t)
     | LLet(string, t, Hexp.t)
     | RLet(string, Hexp.t, t)
+    | LAsc(t, Htyp.t)
+    | RAsc(Hexp.t, Ztyp.t)
     | LProd(t, Hexp.t)
     | RProd(Hexp.t, t)
     | Proj1(t)
@@ -101,6 +103,7 @@ module Shape = {
     | Var(string)
     | Lam(string)
     | Let(string)
+    | Asc
     | Ap
     | NumLit(int)
     | BoolLit(bool)
@@ -134,6 +137,8 @@ let rec erase_exp = (e: Zexp.t): Hexp.t => {
   | RLam(name, asc, body) => Lam(name, asc, erase_exp(body))
   | LLet(name, e1, e2) => Let(name, erase_exp(e1), e2)
   | RLet(name, e1, e2) => Let(name, e1, erase_exp(e2))
+  | LAsc(e, t) => Asc(erase_exp(e), t)
+  | RAsc(e, t) => Asc(e, erase_typ(t))
   | LProd(e1, e2) => Prod(erase_exp(e1), e2)
   | RProd(e1, e2) => Prod(e1, erase_exp(e2))
   | Proj1(e) => Proj1(erase_exp(e))
@@ -189,7 +194,7 @@ let rec type_meet = (t1: Htyp.t, t2: Htyp.t): option(Htyp.t) => {
   | (Product(t11, t12), Product(t21, t22)) =>
     let* t1 = type_meet(t11, t21);
     let* t2 = type_meet(t12, t22);
-    Some(Product(t1, t2));
+    Some(Htyp.Product(t1, t2));
   | _ => None
   };
 };
@@ -227,6 +232,12 @@ let rec syn = (ctx: typctx, e: Hexp.t): option(Htyp.t) => {
     // let x = e1 in e2 -> t iff: e1 -> t1, ctx extend w x:t1, e2 -> t
     let* t1 = syn(ctx, bound);
     syn(TypCtx.add(var_name, t1, ctx), body);
+  | Asc(e, t) =>
+    if (ana(ctx, e, t)) {
+      Some(t);
+    } else {
+      None;
+    }
   | NumLit(_) => Some(Htyp.Num)
   | BoolLit(_) => Some(Htyp.Bool)
   | Prod(e1, e2) =>
@@ -278,7 +289,7 @@ let rec syn = (ctx: typctx, e: Hexp.t): option(Htyp.t) => {
     | _ => None
     };
   | EHole => Some(Htyp.Hole)
-  | MarkHole(exp, mark) =>
+  | MarkHole(exp, _) =>
     switch (syn(ctx, exp)) {
     | Some(_) => Some(Htyp.Hole)
     | None => None
@@ -366,6 +377,8 @@ let rec move_action = (e: Zexp.t, a: Dir.t): Zexp.t => {
     | (Lam(name, asc, body), Child(Two)) => RLam(name, asc, Cursor(body))
     | (Let(name, e1, e2), Child(One)) => LLet(name, Cursor(e1), e2)
     | (Let(name, e1, e2), Child(Two)) => RLet(name, e1, Cursor(e2))
+    | (Asc(e, t), Child(One)) => LAsc(Cursor(e), t)
+    | (Asc(e, t), Child(Two)) => RAsc(e, Cursor(t))
     | (Prod(e1, e2), Child(One)) => LProd(Cursor(e1), e2)
     | (Prod(e1, e2), Child(Two)) => RProd(e1, Cursor(e2))
     | (Proj1(e), Child(One)) => Proj1(Cursor(e))
@@ -377,7 +390,7 @@ let rec move_action = (e: Zexp.t, a: Dir.t): Zexp.t => {
     | (Cond(p, t, e), Child(One)) => IfCond(Cursor(p), t, e)
     | (Cond(p, t, e), Child(Two)) => ThenCond(p, Cursor(t), e)
     | (Cond(p, t, e), Child(Three)) => ElseCond(p, t, Cursor(e))
-    | (MarkHole(e, m), _) => MarkHole(Cursor(e), m)
+    | (MarkHole(e, m), Child(One)) => MarkHole(Cursor(e), m)
     | _ => raise(Unimplemented)
     }
   | LLam(name, asc, body) =>
@@ -399,6 +412,16 @@ let rec move_action = (e: Zexp.t, a: Dir.t): Zexp.t => {
     switch (a, e2) {
     | (Parent, Cursor(e2)) => Cursor(Let(name, e1, e2))
     | (_, _) => RLet(name, e1, move_action(e2, a))
+    }
+  | LAsc(e, t) =>
+    switch (a, e) {
+    | (Parent, Cursor(e)) => Cursor(Asc(e, t))
+    | (_, _) => LAsc(move_action(e, a), t)
+    }
+  | RAsc(e, t) =>
+    switch (a, t) {
+    | (Parent, Cursor(t)) => Cursor(Asc(e, t))
+    | (_, _) => RAsc(e, move_typ(t, a))
     }
   | LProd(e1, e2) =>
     switch (a, e1) {
@@ -523,6 +546,9 @@ and syn_action =
             Some((Zexp.LLam(name, Cursor(Hole), EHole), Arrow(Hole, Hole)))
           | _ => None
           }
+        | Asc =>
+          let* t' = syn(ctx, h_exp);
+          Some((Zexp.RAsc(h_exp, Cursor(t')), t'));
         | Ap =>
           let* t' = syn(ctx, h_exp);
           switch (matched_arrow_typ(t')) {
@@ -562,7 +588,7 @@ and syn_action =
           };
         | Let(name) =>
           let* t' = syn(ctx, h_exp);
-          Some((Zexp.RLet(name, h_exp, Cursor(EHole)), t'));
+          Some((Zexp.LLet(name, Cursor(EHole), h_exp), t'));
         | Prod =>
           let* t' = syn(ctx, h_exp);
           Some((Zexp.RProd(h_exp, Cursor(EHole)), t'));
@@ -632,7 +658,7 @@ and syn_action =
       let (then_exp', t) = z';
       let* t' = syn(ctx, else_exp);
       switch (type_meet(t, t')) {
-      | Some(t'') => Some((Zexp.ThenCond(if_exp, then_exp, else_exp), t''))
+      | Some(t'') => Some((Zexp.ThenCond(if_exp, then_exp', else_exp), t''))
       | None =>
         Some((
           Zexp.MarkHole(
@@ -660,13 +686,29 @@ and syn_action =
       };
     | LLet(name, z_exp, h_exp) =>
       let* t = syn(ctx, erase_exp(z_exp));
-      let* (e', t') = syn_action(ctx, (z_exp, t), a);
+      let* (e', t') = syn_action(TypCtx.add(name, t, ctx), (z_exp, t), a);
       let* t'' = syn(TypCtx.add(name, t', ctx), h_exp);
       Some((Zexp.LLet(name, e', h_exp), t''));
     | RLet(name, h_exp, z_exp) =>
       let* t = syn(ctx, h_exp);
-      let* (e', t') = syn_action(ctx, (z_exp, t), a);
+      let* (e', t') = syn_action(TypCtx.add(name, t, ctx), (z_exp, t), a);
       Some((Zexp.RLet(name, h_exp, e'), t'));
+    | LAsc(z_exp, h_typ) =>
+      let* e' = ana_action(ctx, z_exp, a, h_typ);
+      Some((Zexp.LAsc(e', h_typ), h_typ));
+    | RAsc(h_exp, z_typ) =>
+      let* t' = typ_action(z_typ, a);
+      if (ana(ctx, h_exp, erase_typ(t'))) {
+        Some((Zexp.RAsc(h_exp, z_typ), erase_typ(t')));
+      } else {
+        Some((
+          Zexp.MarkHole(
+            Zexp.RAsc(h_exp, z_typ),
+            UnexpectedType(erase_typ(t')),
+          ),
+          Hole,
+        ));
+      };
     | LProd(z_exp, h_exp) =>
       let* t = syn(ctx, erase_exp(z_exp));
       let* t2 = syn(ctx, h_exp);
@@ -684,9 +726,15 @@ and syn_action =
       let* (_, t2) = matched_product_typ(t);
       Some((Zexp.Proj2(z_exp), t2));
     | MarkHole(z_exp, m) =>
-      let* t' = syn(ctx, erase_exp(z_exp));
-      let* (e', t'') = syn_action(ctx, (z_exp, t'), a);
-      Some((Zexp.MarkHole(e', m), t''));
+      let t' =
+        switch (syn(ctx, erase_exp(z_exp))) {
+        | Some(t) => t
+        | None => Hole
+        };
+      // perform syn action
+      let* z' = syn_action(ctx, (z_exp, t'), a);
+      let (z_exp', t) = z';
+      Some((Zexp.MarkHole(z_exp', m), t));
     }
   };
 }
@@ -721,7 +769,7 @@ and ana_action =
         | Var(name) =>
           let* t' = TypCtx.find_opt(name, ctx);
           if (!type_consistent(t, t')) {
-            Some(Zexp.MarkHole(Cursor(Var(name)), Free));
+            Some(Zexp.MarkHole(Cursor(Var(name)), InconsistentTypes));
           } else {
             subsumption(ctx, e, a, t);
           };
@@ -755,11 +803,12 @@ and ana_action =
           } else {
             subsumption(ctx, e, a, t);
           }
+        | Asc => Some(Zexp.RAsc(h_exp, Cursor(t)))
         | _ => subsumption(ctx, e, a, t)
         }
       | Finish =>
         switch (h_exp) {
-        | MarkHole(h_exp', m) =>
+        | MarkHole(h_exp', _) =>
           if (ana(ctx, h_exp', t)) {
             Some(Cursor(h_exp'));
           } else {
@@ -771,14 +820,31 @@ and ana_action =
       | Move(_) => None
       }
     // zipper
-    | LLam(name, asc, z_exp) =>
-      let* (t1, t2) = matched_arrow_typ(t);
-      let* z_exp' = ana_action(TypCtx.add(name, t1, ctx), z_exp, a, t2);
-      Some(Zexp.Lam(name, z_exp'));
+    | LLam(name, z_typ, h_exp) =>
+      switch (matched_arrow_typ(t)) {
+      | Some((t1, t2)) =>
+        let* asc' = typ_action(z_typ, a);
+        if (type_consistent(erase_typ(asc'), t1)) {
+          if (ana(TypCtx.add(name, erase_typ(asc'), ctx), h_exp, t2)) {
+            Some(Zexp.LLam(name, asc', h_exp));
+          } else {
+            Some(
+              Zexp.MarkHole(
+                Zexp.LLam(name, asc', h_exp),
+                UnexpectedType(t2),
+              ),
+            );
+          };
+        } else {
+          Some(
+            Zexp.MarkHole(Zexp.LLam(name, asc', h_exp), UnexpectedType(t1)),
+          );
+        };
+      | _ => None
+      }
     | RLam(name, asc, h_exp) =>
-      let* (t1, t2) = matched_arrow_typ(t);
-      let* z_exp' = ana_action(TypCtx.add(name, t1, ctx), z_exp, a, t2);
-      Some(Zexp.Lam(name, z_exp'));
+      let* h_exp' = ana_action(ctx, h_exp, a, t);
+      Some(Zexp.RLam(name, asc, h_exp'));
     | _ => subsumption(ctx, e, a, t)
     }
   };

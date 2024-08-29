@@ -18,9 +18,10 @@ let test_eetop_2 = () => {
 
 let test_eeascl_1 = () => {
   let ze: Hazelnut.Zexp.t =
-    LAsc(Cursor(Lam("f", Lit(1))), Arrow(Num, Num));
+    LAsc(Cursor(Lam("f", Num, Lit(1))), Arrow(Num, Num));
   let given: Hazelnut.Hexp.t = Hazelnut.erase_exp(ze);
-  let expected: Hazelnut.Hexp.t = Asc(Lam("f", Lit(1)), Arrow(Num, Num));
+  let expected: Hazelnut.Hexp.t =
+    Asc(Lam("f", Num, Lit(1)), Arrow(Num, Num));
   check(hexp_typ, "same Hazelnut.Hexp.t", given, expected);
 };
 

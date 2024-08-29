@@ -2,28 +2,39 @@ module Htyp: {
   [@deriving (sexp, compare)]
   type t =
     | Arrow(t, t)
+    | Product(t, t)
     | Num
     | Bool
     | Hole;
 };
 
+module Mark: {
+  [@deriving (sexp, compare)]
+  type t =
+    | InconsistentTypes
+    | InconsistentBranches
+    | InconsistentAscription
+    | Free
+    | UnexpectedType(Htyp.t);
+};
+
 module Hexp: {
   [@deriving (sexp, compare)]
   type t =
-    | Var(string)
-    | Lam(string, t)
-    | Let(string, t, t)
-    | Ap(t, t)
-    | Lit(int)
-    | BoolLit(bool)
-    | Plus(t, t)
-    | Cond(t, t, t)
-    | Tuple(t, t)
-    | ProjL(t)
-    | ProjR(t)
-    | Asc(t, Htyp.t)
-    | EHole
-    | NEHole(t);
+    | Var(string) // x
+    | Lam(string, Htyp.t, t) // \x:t.e
+    | Ap(t, t) // e e
+    | Let(string, t, t) // let x = e in e
+    | Asc(t, Htyp.t) // e : t
+    | NumLit(int) // n
+    | BoolLit(bool) // b
+    | Prod(t, t) // (e, e)
+    | Plus(t, t) // e + e
+    | Cond(t, t, t) // if e then e else e
+    | Proj1(t) // e.1
+    | Proj2(t) // e.2
+    | EHole // hole
+    | MarkHole(t, Mark.t); // mark hole
 };
 
 module Ztyp: {
@@ -31,26 +42,33 @@ module Ztyp: {
   type t =
     | Cursor(Htyp.t)
     | LArrow(t, Htyp.t)
-    | RArrow(Htyp.t, t);
+    | RArrow(Htyp.t, t)
+    | LProd(t, Htyp.t)
+    | RProd(Htyp.t, t);
 };
 
 module Zexp: {
   [@deriving (sexp, compare)]
   type t =
     | Cursor(Hexp.t)
-    | Lam(string, t)
+    | LLam(string, Ztyp.t, Hexp.t)
+    | RLam(string, Htyp.t, t)
     | LLet(string, t, Hexp.t)
     | RLet(string, Hexp.t, t)
+    | LAsc(t, Htyp.t)
+    | RAsc(Hexp.t, Ztyp.t)
+    | LProd(t, Hexp.t)
+    | RProd(Hexp.t, t)
+    | Proj1(t)
+    | Proj2(t)
     | LAp(t, Hexp.t)
     | RAp(Hexp.t, t)
     | LPlus(t, Hexp.t)
     | RPlus(Hexp.t, t)
-    | PCond(t, Hexp.t, Hexp.t)
+    | IfCond(t, Hexp.t, Hexp.t)
     | ThenCond(Hexp.t, t, Hexp.t)
     | ElseCond(Hexp.t, Hexp.t, t)
-    | LAsc(t, Htyp.t)
-    | RAsc(Hexp.t, Ztyp.t)
-    | NEHole(t);
+    | MarkHole(t, Mark.t);
 };
 
 module Child: {
@@ -67,18 +85,23 @@ module Dir: {
 };
 
 module Shape: {
+  [@deriving (sexp, compare)]
   type t =
     | Arrow
     | Num
     | Bool
-    | Asc
+    | ProdT
     | Var(string)
     | Lam(string)
     | Let(string)
+    | Asc
     | Ap
-    | Lit(int)
+    | NumLit(int)
     | BoolLit(bool)
     | Cond
+    | Proj1
+    | Proj2
+    | Prod
     | Plus
     | NEHole;
 };

@@ -4,28 +4,51 @@ open Monad_lib.Monad;
 module Hazelnut = Hazelnut_lib.Hazelnut;
 
 // A combination of all Hazelnut types for purposes of printing
+module Pmark = {
+  type t =
+    | InconsistentTypes
+    | InconsistentBranches
+    | InconsistentAscription
+    | Free
+    | UnexpectedType(string);
+};
+
 module Pexp = {
   type t =
     | Cursor(t)
     | Arrow(t, t)
+    | ProductType(t, t)
     | Num
     | Bool
     | Var(string)
-    | Lam(string, t)
+    | Lam(string, t, t)
     | Let(string, t, t)
+    | Product(t, t)
+    | Proj1(t)
+    | Proj2(t)
     | Ap(t, t)
-    | Lit(int)
+    | NumLit(int)
     | BoolLit(bool)
     | Plus(t, t)
     | Cond(t, t, t)
     | Asc(t, t)
     | EHole
-    | NEHole(t);
+    | MarkHole(t, Pmark.t);
 };
+
+let pmark_of_mark: Hazelnut.Mark.t => Pmark.t =
+  fun
+  | InconsistentTypes => InconsistentTypes
+  | InconsistentBranches => InconsistentBranches
+  | InconsistentAscription => InconsistentAscription
+  | Free => Free
+  | UnexpectedType(t) =>
+    UnexpectedType(Sexp.to_string_hum(Hazelnut.Htyp.sexp_of_t(t)));
 
 let rec pexp_of_htyp: Hazelnut.Htyp.t => Pexp.t =
   fun
   | Arrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_htyp(t2))
+  | Product(t1, t2) => ProductType(pexp_of_htyp(t1), pexp_of_htyp(t2))
   | Num => Num
   | Bool => Bool
   | Hole => EHole;
@@ -33,43 +56,53 @@ let rec pexp_of_htyp: Hazelnut.Htyp.t => Pexp.t =
 let rec pexp_of_hexp: Hazelnut.Hexp.t => Pexp.t =
   fun
   | Var(x) => Var(x)
-  | Lam(x, e) => Lam(x, pexp_of_hexp(e))
+  | Lam(x, a, e) => Lam(x, pexp_of_htyp(a), pexp_of_hexp(e))
   | Let(x, e1, e2) => Let(x, pexp_of_hexp(e1), pexp_of_hexp(e2))
+  | Prod(e1, e2) => Product(pexp_of_hexp(e1), pexp_of_hexp(e2))
+  | Proj1(e) => Proj1(pexp_of_hexp(e))
+  | Proj2(e) => Proj2(pexp_of_hexp(e))
   | Ap(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_hexp(e2))
-  | Lit(n) => Lit(n)
+  | NumLit(n) => NumLit(n)
   | BoolLit(b) => BoolLit(b)
   | Plus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_hexp(e2))
   | Cond(e1, e2, e3) =>
     Cond(pexp_of_hexp(e1), pexp_of_hexp(e2), pexp_of_hexp(e3))
   | Asc(e, t) => Asc(pexp_of_hexp(e), pexp_of_htyp(t))
   | EHole => EHole
-  | NEHole(e) => NEHole(pexp_of_hexp(e));
+  | MarkHole(e, m) => MarkHole(pexp_of_hexp(e), pmark_of_mark(m));
 
 let rec pexp_of_ztyp: Hazelnut.Ztyp.t => Pexp.t =
   fun
   | Cursor(t) => Cursor(pexp_of_htyp(t))
   | LArrow(t1, t2) => Arrow(pexp_of_ztyp(t1), pexp_of_htyp(t2))
-  | RArrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_ztyp(t2));
+  | RArrow(t1, t2) => Arrow(pexp_of_htyp(t1), pexp_of_ztyp(t2))
+  | LProd(t1, t2) => ProductType(pexp_of_ztyp(t1), pexp_of_htyp(t2))
+  | RProd(t1, t2) => ProductType(pexp_of_htyp(t1), pexp_of_ztyp(t2));
 
 let rec pexp_of_zexp: Hazelnut.Zexp.t => Pexp.t =
   fun
   | Cursor(e) => Cursor(pexp_of_hexp(e))
-  | Lam(x, e) => Lam(x, pexp_of_zexp(e))
+  | LLam(x, a, e) => Lam(x, pexp_of_ztyp(a), pexp_of_hexp(e))
+  | RLam(x, a, e) => Lam(x, pexp_of_htyp(a), pexp_of_zexp(e))
   | LLet(x, e1, e2) => Let(x, pexp_of_zexp(e1), pexp_of_hexp(e2))
   | RLet(x, e1, e2) => Let(x, pexp_of_hexp(e1), pexp_of_zexp(e2))
+  | LProd(e1, e2) => Product(pexp_of_zexp(e1), pexp_of_hexp(e2))
+  | RProd(e1, e2) => Product(pexp_of_hexp(e1), pexp_of_zexp(e2))
+  | Proj1(e) => Proj1(pexp_of_zexp(e))
+  | Proj2(e) => Proj2(pexp_of_zexp(e))
   | LAp(e1, e2) => Ap(pexp_of_zexp(e1), pexp_of_hexp(e2))
   | RAp(e1, e2) => Ap(pexp_of_hexp(e1), pexp_of_zexp(e2))
   | LPlus(e1, e2) => Plus(pexp_of_zexp(e1), pexp_of_hexp(e2))
   | RPlus(e1, e2) => Plus(pexp_of_hexp(e1), pexp_of_zexp(e2))
-  | PCond(p, t, e) =>
-    Cond(pexp_of_zexp(p), pexp_of_hexp(t), pexp_of_hexp(e))
-  | ThenCond(p, t, e) =>
-    Cond(pexp_of_hexp(p), pexp_of_zexp(t), pexp_of_hexp(e))
-  | ElseCond(p, t, e) =>
-    Cond(pexp_of_hexp(p), pexp_of_hexp(t), pexp_of_zexp(e))
+  | IfCond(i, t, e) =>
+    Cond(pexp_of_zexp(i), pexp_of_hexp(t), pexp_of_hexp(e))
+  | ThenCond(i, t, e) =>
+    Cond(pexp_of_hexp(i), pexp_of_zexp(t), pexp_of_hexp(e))
+  | ElseCond(i, t, e) =>
+    Cond(pexp_of_hexp(i), pexp_of_hexp(t), pexp_of_zexp(e))
   | LAsc(e, t) => Asc(pexp_of_zexp(e), pexp_of_htyp(t))
   | RAsc(e, t) => Asc(pexp_of_hexp(e), pexp_of_ztyp(t))
-  | NEHole(e) => NEHole(pexp_of_zexp(e));
+  | MarkHole(e, m) => MarkHole(pexp_of_zexp(e), pmark_of_mark(m));
 
 // Lower is tighter
 let rec prec: Pexp.t => int =
@@ -78,17 +111,21 @@ let rec prec: Pexp.t => int =
   | Arrow(_) => 1
   | Num => 0
   | Bool => 0
+  | ProductType(_, _) => 2
   | Var(_) => 0
   | Lam(_) => 0
   | Let(_) => 0
+  | Product(_, _) => 0
+  | Proj1(_) => 4
+  | Proj2(_) => 4
   | Ap(_) => 2
-  | Lit(_) => 0
+  | NumLit(_) => 0
   | BoolLit(_) => 0
   | Plus(_) => 3
   | Cond(_) => 0
   | Asc(_) => 4
   | EHole => 0
-  | NEHole(_) => 0;
+  | MarkHole(_, _) => 0;
 
 module Side = {
   type t =
@@ -97,23 +134,35 @@ module Side = {
     | Atom;
 };
 
+let string_of_pmark: Pmark.t => string =
+  fun
+  | InconsistentTypes => "InconsistentTypes"
+  | InconsistentBranches => "InconsistentBranches"
+  | InconsistentAscription => "InconsistentAscription"
+  | Free => "Free"
+  | UnexpectedType(t) => "UnexpectedType(" ++ t ++ ")";
+
 let rec assoc: Pexp.t => Side.t =
   fun
   | Cursor(e) => assoc(e)
   | Arrow(_) => Right
   | Num => Atom
   | Bool => Atom
+  | ProductType(_, _) => Atom
   | Var(_) => Atom
   | Lam(_) => Atom
   | Let(_) => Atom
+  | Product(_, _) => Atom
+  | Proj1(_) => Left
+  | Proj2(_) => Left
   | Ap(_) => Left
-  | Lit(_) => Atom
+  | NumLit(_) => Atom
   | BoolLit(_) => Atom
   | Plus(_) => Left
   | Cond(_) => Atom
   | Asc(_) => Left
   | EHole => Atom
-  | NEHole(_) => Atom;
+  | MarkHole(_, _) => Atom;
 
 let rec string_of_pexp: Pexp.t => string =
   fun
@@ -122,8 +171,17 @@ let rec string_of_pexp: Pexp.t => string =
     paren(t1, outer, Side.Left) ++ " -> " ++ paren(t2, outer, Side.Right)
   | Num => "Num"
   | Bool => "Bool"
+  | ProductType(t1, t2) as outer =>
+    paren(t1, outer, Side.Left) ++ " * " ++ paren(t2, outer, Side.Right)
   | Var(x) => x
-  | Lam(x, e) => "fun " ++ x ++ " -> { " ++ string_of_pexp(e) ++ " }"
+  | Lam(x, a, e) =>
+    "fun "
+    ++ x
+    ++ ": "
+    ++ string_of_pexp(a)
+    ++ " -> {"
+    ++ string_of_pexp(e)
+    ++ "\n}"
   | Let(x, e1, e2) =>
     "let "
     ++ x
@@ -132,9 +190,13 @@ let rec string_of_pexp: Pexp.t => string =
     ++ " } in { "
     ++ string_of_pexp(e2)
     ++ " }"
+  | Product(e1, e2) as outer =>
+    paren(e1, outer, Side.Left) ++ ", " ++ paren(e2, outer, Side.Right)
+  | Proj1(e) => string_of_pexp(e) ++ ".1"
+  | Proj2(e) => string_of_pexp(e) ++ ".2"
   | Ap(e1, e2) as outer =>
     paren(e1, outer, Side.Left) ++ " " ++ paren(e2, outer, Side.Right)
-  | Lit(n) => string_of_int(n)
+  | NumLit(n) => string_of_int(n)
   | BoolLit(b) => string_of_bool(b)
   | Plus(e1, e2) as outer =>
     paren(e1, outer, Side.Left) ++ " + " ++ paren(e2, outer, Side.Right)
@@ -149,7 +211,8 @@ let rec string_of_pexp: Pexp.t => string =
   | Asc(e, t) as outer =>
     paren(e, outer, Side.Left) ++ ": " ++ paren(t, outer, Side.Right)
   | EHole => "[ ]"
-  | NEHole(e) => "[ " ++ string_of_pexp(e) ++ " ]"
+  | MarkHole(e, m) =>
+    "[ " ++ string_of_pexp(e) ++ "| " ++ string_of_pmark(m) ++ "| ]"
 
 and paren = (inner: Pexp.t, outer: Pexp.t, side: Side.t): string => {
   let unparenned = string_of_pexp(inner);
@@ -258,7 +321,7 @@ module Action = {
     | Var
     | Lam
     | Let
-    | Lit
+    | NumLit
     | BoolLit;
 
   [@deriving sexp]
@@ -312,7 +375,7 @@ let apply_action =
     | UpdateInput(Var, var_input) => Model.set({...state, var_input})
     | UpdateInput(Lam, lam_input) => Model.set({...state, lam_input})
     | UpdateInput(Let, let_input) => Model.set({...state, let_input})
-    | UpdateInput(Lit, lit_input) => Model.set({...state, lit_input})
+    | UpdateInput(NumLit, lit_input) => Model.set({...state, lit_input})
     | UpdateInput(BoolLit, bool_input) => Model.set({...state, bool_input})
     | ShowWarning(warning) => Model.set({...state, warning: Some(warning)})
     };
@@ -455,15 +518,15 @@ let view =
             None,
           ),
           button(
-            "Construct Lit",
+            "Construct NumLit",
             try(
               Action.HazelnutAction(
-                Construct(Lit(int_of_string(state.lit_input))),
+                Construct(NumLit(int_of_string(state.lit_input))),
               )
             ) {
             | Failure(_) => Action.ShowWarning("Invalid input")
             },
-            Some((Lit, state.lit_input)),
+            Some((NumLit, state.lit_input)),
           ),
           button(
             "Construct Bool",

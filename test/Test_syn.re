@@ -10,7 +10,7 @@ type typctx = Hazelnut.TypCtx.t(Hazelnut.Htyp.t);
 let test_sasc_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t =
-    Asc(Lam("x", Plus(Lit(1), Lit(2))), Arrow(Num, Num));
+    Asc(Lam("x", Num, Plus(NumLit(1), NumLit(2))), Arrow(Num, Num));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) =
     Some(Hazelnut.Htyp.Arrow(Num, Num));
@@ -43,7 +43,7 @@ let test_svar_2 = () => {
 
 let test_sap_1 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Num, Num));
-  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lit(1));
+  let he: Hazelnut.Hexp.t = Ap(Var("x"), NumLit(1));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -52,7 +52,7 @@ let test_sap_1 = () => {
 let test_sap_2 = () => {
   let ctx: typctx =
     TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Arrow(Num, Num), Num));
-  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lam("y", Lit(1)));
+  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lam("y", NumLit(1)));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -60,7 +60,7 @@ let test_sap_2 = () => {
 
 let test_snum_1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let he: Hazelnut.Hexp.t = Lit(1);
+  let he: Hazelnut.Hexp.t = NumLit(1);
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -68,7 +68,7 @@ let test_snum_1 = () => {
 
 let test_snum_2 = () => {
   let ctx: typctx = TypCtx.empty;
-  let he: Hazelnut.Hexp.t = Lit(-1);
+  let he: Hazelnut.Hexp.t = NumLit(-1);
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -76,7 +76,7 @@ let test_snum_2 = () => {
 
 let test_splus_1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let he: Hazelnut.Hexp.t = Plus(Lit(1), Lit(-1));
+  let he: Hazelnut.Hexp.t = Plus(NumLit(1), NumLit(-1));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -84,7 +84,7 @@ let test_splus_1 = () => {
 
 let test_splus_2 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
-  let he: Hazelnut.Hexp.t = Plus(Lit(1), Var("x"));
+  let he: Hazelnut.Hexp.t = Plus(NumLit(1), Var("x"));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
@@ -116,7 +116,7 @@ let test_snehole_1 = () => {
 
 let test_snehole_2 = () => {
   let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
-  let he: Hazelnut.Hexp.t = NEHole(Asc(Ap(Var("incr"), Lit(1)), Num));
+  let he: Hazelnut.Hexp.t = NEHole(Asc(Ap(Var("incr"), NumLit(1)), Num));
   let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
   let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
   check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
