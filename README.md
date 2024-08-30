@@ -12,7 +12,7 @@ Once you do that, I recommend you setup an opam switch just for this project. Yo
 
 To create the switch:
 ```sh
-opam switch create diy-hazelnut 4.13.1
+opam switch create diy-hazelnut 5.2.0
 ```
 
 To set this switch as the currently active one:
