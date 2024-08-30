@@ -420,10 +420,7 @@ let view =
             };
 
           Node.button(
-            ~attr=
-              Attr.many_without_merge([
-                Attr.on_click(_ev => inject(actions)),
-              ]),
+            ~attrs=[Attr.on_click(_ev => inject(actions))],
             [Node.text(label)],
           );
         };
@@ -431,15 +428,14 @@ let view =
         let input_node = {
           let+ (input_location, input_value) = input;
           Node.input(
-            ~attr=
-              Attr.many_without_merge([
-                Attr.type_("text"),
-                Attr.string_property("value", input_value),
-                Attr.on_input((_ev, text) =>
-                  inject([Action.UpdateInput(input_location, text)])
-                ),
-              ]),
-            [],
+            ~attrs=[
+              Attr.type_("text"),
+              Attr.string_property("value", input_value),
+              Attr.on_input((_ev, text) =>
+                inject([Action.UpdateInput(input_location, text)])
+              ),
+            ],
+            (),
           );
         };
 

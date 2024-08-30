@@ -621,10 +621,12 @@ and syn_action =
       print_endline("1");
       let* (e', t3) = syn_action(ctx, (z_exp, t2), a); // perform the action and synthesize the new type
       print_endline("2");
-      let (t4, t5) = switch(matched_arrow_typ(t3)){ // matched arrow type from new type
+      let (t4, t5) =
+        switch (matched_arrow_typ(t3)) {
+        // matched arrow type from new type
         | Some((t1, t2)) => (t1, t2) // if it's an arrow type, return the two types
         | None => (Htyp.Hole, Htyp.Hole) // otherwise we need to insert a mark here
-      };
+        };
       print_endline("3");
       let ana_correct = ana(ctx, h_exp, t4); // check if the h_exp analyzes against the second type
       if (ana_correct) {
