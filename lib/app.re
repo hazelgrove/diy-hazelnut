@@ -181,15 +181,15 @@ let rec string_of_pexp: Pexp.t => string =
     ++ string_of_pexp(a)
     ++ " -> {"
     ++ string_of_pexp(e)
-    ++ "\n}"
+    ++ "}"
   | Let(x, e1, e2) =>
     "let "
     ++ x
     ++ " = { "
     ++ string_of_pexp(e1)
-    ++ " } in { "
+    ++ " } in {\n"
     ++ string_of_pexp(e2)
-    ++ " }"
+    ++ "\n}"
   | Product(e1, e2) as outer =>
     paren(e1, outer, Side.Left) ++ ", " ++ paren(e2, outer, Side.Right)
   | Proj1(e) => string_of_pexp(e) ++ ".1"
