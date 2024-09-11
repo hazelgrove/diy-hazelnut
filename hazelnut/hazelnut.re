@@ -331,6 +331,8 @@ let rec typ_action = (t: Ztyp.t, a: Action.t): Ztyp.t => {
     }
   };
 };
+
+// Precondition: e has no marks
 let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
   switch (a) {
   | Move(dir) => move_action(e, dir)
@@ -375,6 +377,7 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
   };
 };
 
+// Precondition: e has no marks
 let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   switch (e) {
   | Var(x) =>
@@ -406,6 +409,7 @@ let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   };
 }
 
+// Precondition: e has no marks
 and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
   let subsume = (e): Hexp.t => {
     let (e', t') = mark_syn(ctx, e);
@@ -428,5 +432,22 @@ and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
       };
     }
   | _ => subsume(e)
+  };
+};
+
+// Precondition: z has no marks
+let rec fold_zexp_mexp = (z: Zexp.t, e: Hexp.t): Zexp.t => {
+  switch (z, e) {
+  | (Cursor(_), e) => Cursor(e)
+  | (z, Mark(e, m)) => Mark(fold_zexp_mexp(z, e), m)
+  | (LAp(z, _), Ap(e, e2)) => LAp(fold_zexp_mexp(z, e), e2)
+  | (RAp(_, z), Ap(e1, e)) => RAp(e1, fold_zexp_mexp(z, e))
+  | (LAsc(z, _), Asc(e, t)) => LAsc(fold_zexp_mexp(z, e), t)
+  | (RAsc(_, z), Asc(e, _)) => RAsc(e, z)
+  | (LLam(_, z, _), Lam(x, _, e)) => LLam(x, z, e)
+  | (RLam(_, _, z), Lam(x, t, e)) => RLam(x, t, fold_zexp_mexp(z, e))
+  | (LPlus(z, _), Plus(e, e2)) => LPlus(fold_zexp_mexp(z, e), e2)
+  | (RPlus(_, z), Plus(e1, e)) => RPlus(e1, fold_zexp_mexp(z, e))
+  | (_, _) => failwith("inconsistent fold")
   };
 };
