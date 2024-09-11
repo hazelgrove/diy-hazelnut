@@ -366,8 +366,8 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
     // zipper cases
     | LAp(z_exp, h_exp) => LAp(exp_action(z_exp, a), h_exp)
     | RAp(h_exp, z_exp) => RAp(h_exp, exp_action(z_exp, a))
-    | LLam(_, _, _) => e
-    | RLam(_, _, _) => e
+    | LLam(x, z_typ, h_exp) => LLam(x, typ_action(z_typ, a), h_exp)
+    | RLam(x, h_typ, z_exp) => RLam(x, h_typ, exp_action(z_exp, a))
     | LPlus(z_exp, h_exp) => LPlus(exp_action(z_exp, a), h_exp)
     | RPlus(h_exp, z_exp) => RPlus(h_exp, exp_action(z_exp, a))
     | LAsc(z_exp, h_typ) => LAsc(exp_action(z_exp, a), h_typ)
