@@ -236,6 +236,8 @@ let view =
 
     let e_folded = Hazelnut.fold_zexp_mexp(e_cursor, e_marked);
 
+    // print_endline(string_of_pexp(pexp_of_zexp(e_folded)));
+
     let expression =
       Node.div([
         Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(e_folded)))]),
