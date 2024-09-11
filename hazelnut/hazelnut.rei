@@ -19,7 +19,7 @@ module Mark: {
   type t =
     | Free
     | NonArrowAp
-    | LamNonArrow
+    | LamAscIncon
     | Inconsistent;
 };
 

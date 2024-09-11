@@ -26,7 +26,7 @@ module Mark = {
   type t =
     | Free
     | NonArrowAp
-    | LamNonArrow
+    | LamAscIncon
     | Inconsistent;
 };
 
@@ -428,7 +428,7 @@ and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
       if (type_consistent(t1, t')) {
         Lam(x, t', body');
       } else {
-        Mark(Lam(x, t', body'), LamNonArrow);
+        Mark(Lam(x, t', body'), LamAscIncon);
       };
     }
   | _ => subsume(e)
