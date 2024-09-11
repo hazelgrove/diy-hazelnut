@@ -147,6 +147,8 @@ and paren = (inner: Pexp.t, outer: Pexp.t, side: Side.t): string => {
 [@deriving (sexp, fields, compare)]
 type state = {
   e: Hazelnut.Zexp.t,
+  // t: Hazelnut.Htyp.t,
+  warning: option(string),
   var_input: string,
   lam_input: string,
   let_input: string,
@@ -163,6 +165,8 @@ module Model = {
   let init = (): t =>
     set({
       e: Cursor(EHole),
+      // t: Hole,
+      warning: None,
       var_input: "",
       lam_input: "",
       let_input: "",
@@ -185,7 +189,8 @@ module Action = {
   [@deriving sexp]
   type action =
     | HazelnutAction(Hazelnut.Action.t)
-    | UpdateInput(input_location, string);
+    | UpdateInput(input_location, string)
+    | ShowWarning(string);
 
   [@deriving sexp]
   type t = list(action);
@@ -200,16 +205,26 @@ let apply_action =
   let f = (model: Model.t, action: Action.action): Model.t => {
     let state = model.state;
 
+    let warn = (warning: string): Model.t =>
+      Model.set({...state, warning: Some(warning)});
+
     switch (action) {
     | HazelnutAction(action) =>
-      let e = Hazelnut.exp_action(state.e, action);
-      let new_state = {...state, e};
-      Model.set(new_state);
+      try({
+        let e = Hazelnut.exp_action(state.e, action);
+
+        let new_state = {...state, e, warning: None};
+
+        Model.set(new_state);
+      }) {
+      | Hazelnut.Unimplemented => warn("Unimplemented")
+      }
     | UpdateInput(Var, var_input) => Model.set({...state, var_input})
     | UpdateInput(Lam, lam_input) => Model.set({...state, lam_input})
     | UpdateInput(Let, let_input) => Model.set({...state, let_input})
     | UpdateInput(NumLit, lit_input) => Model.set({...state, lit_input})
     | UpdateInput(BoolLit, bool_input) => Model.set({...state, bool_input})
+    | ShowWarning(warning) => Model.set({...state, warning: Some(warning)})
     };
   };
 
@@ -235,8 +250,6 @@ let view =
       Hazelnut.mark_syn(Hazelnut.TypCtx.empty, e_no_cursor);
 
     let e_folded = Hazelnut.fold_zexp_mexp(e_cursor, e_marked);
-
-    // print_endline(string_of_pexp(pexp_of_zexp(e_folded)));
 
     let expression =
       Node.div([
@@ -348,9 +361,13 @@ let view =
           ),
           button(
             "Construct NumLit",
-            Action.HazelnutAction(
-              Construct(NumLit(int_of_string(state.lit_input))),
-            ),
+            try(
+              Action.HazelnutAction(
+                Construct(NumLit(int_of_string(state.lit_input))),
+              )
+            ) {
+            | Failure(_) => Action.ShowWarning("Invalid input")
+            },
             Some((NumLit, state.lit_input)),
           ),
           button(
@@ -366,7 +383,15 @@ let view =
       Node.div([move_buttons, construct_buttons, delete_button]);
     };
 
-    Node.div([expression, buttons]);
+    let warning =
+      Node.p(
+        switch (state.warning) {
+        | Some(warning) => [Node.text(warning)]
+        | None => []
+        },
+      );
+
+    Node.div([expression, buttons, warning]);
   };
 
   Node.body([body]);
