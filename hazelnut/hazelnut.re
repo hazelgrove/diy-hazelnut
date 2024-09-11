@@ -1,9 +1,9 @@
 open Sexplib.Std;
-open Monad_lib.Monad; // Uncomment this line to use the maybe monad
+// open Monad_lib.Monad; // Uncomment this line to use the maybe monad
 
 let compare_string = String.compare;
 let compare_int = Int.compare;
-let compare_bool = Bool.compare;
+// let compare_bool = Bool.compare;
 
 module Htyp = {
   [@deriving (sexp, compare)]
@@ -123,22 +123,6 @@ let rec erase_exp = (e: Zexp.t): Hexp.t => {
   };
 };
 
-// Mark erasure
-let rec mark_erase_exp = (e: Hexp.t): Hexp.t => {
-  switch (e) {
-  | Cursor(e') => e'
-  | LLam(name, asc, body) => Lam(name, erase_typ(asc), body)
-  | RLam(name, asc, body) => Lam(name, asc, erase_exp(body))
-  | LAsc(e, t) => Asc(erase_exp(e), t)
-  | RAsc(e, t) => Asc(e, erase_typ(t))
-  | LAp(zt, et) => Ap(erase_exp(zt), et)
-  | RAp(et, zt) => Ap(et, erase_exp(zt))
-  | LPlus(zt, et) => Plus(erase_exp(zt), et)
-  | RPlus(et, zt) => Plus(et, erase_exp(zt))
-  | Mark(e, m) => Mark(erase_exp(e), m)
-  };
-};
-
 let matched_arrow_typ = (t: Htyp.t): option((Htyp.t, Htyp.t)) => {
   switch (t) {
   | Arrow(t1, t2) => Some((t1, t2))
@@ -147,18 +131,18 @@ let matched_arrow_typ = (t: Htyp.t): option((Htyp.t, Htyp.t)) => {
   };
 };
 
-let rec type_meet = (t1: Htyp.t, t2: Htyp.t): option(Htyp.t) => {
-  switch (t1, t2) {
-  | (Hole, _) => Some(t2)
-  | (_, Hole) => Some(t1)
-  | (Num, Num) => Some(Num)
-  | (Arrow(t11, t12), Arrow(t21, t22)) =>
-    let* t1 = type_meet(t11, t21);
-    let* t2 = type_meet(t12, t22);
-    Some(Htyp.Arrow(t1, t2));
-  | _ => None
-  };
-};
+// let rec type_meet = (t1: Htyp.t, t2: Htyp.t): option(Htyp.t) => {
+//   switch (t1, t2) {
+//   | (Hole, _) => Some(t2)
+//   | (_, Hole) => Some(t1)
+//   | (Num, Num) => Some(Num)
+//   | (Arrow(t11, t12), Arrow(t21, t22)) =>
+//     let* t1 = type_meet(t11, t21);
+//     let* t2 = type_meet(t12, t22);
+//     Some(Htyp.Arrow(t1, t2));
+//   | _ => None
+//   };
+// };
 
 let rec type_consistent = (t1: Htyp.t, t2: Htyp.t): bool => {
   switch (t1, t2) {

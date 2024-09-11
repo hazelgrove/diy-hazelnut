@@ -285,7 +285,7 @@ let check_for_theorem_violation =
 [@deriving (sexp, fields, compare)]
 type state = {
   e: Hazelnut.Zexp.t,
-  t: Hazelnut.Htyp.t,
+  // t: Hazelnut.Htyp.t,
   warning: option(string),
   var_input: string,
   lam_input: string,
@@ -303,7 +303,7 @@ module Model = {
   let init = (): t =>
     set({
       e: Cursor(EHole),
-      t: Hole,
+      // t: Hole,
       warning: None,
       var_input: "",
       lam_input: "",
@@ -349,25 +349,16 @@ let apply_action =
     switch (action) {
     | HazelnutAction(action) =>
       try({
-        let result =
-          Hazelnut.syn_action(
-            Hazelnut.TypCtx.empty,
-            (state.e, state.t),
-            action,
-          );
+        let e = Hazelnut.exp_action(state.e, action);
 
-        switch (result) {
-        | Some((e, t)) =>
-          let new_state = {...state, e, t, warning: None};
+        let new_state = {...state, e, warning: None};
 
-          let violation =
-            check_for_theorem_violation(action, state.e, state.t, e, t);
+        let violation =
+          check_for_theorem_violation(action, state.e, state.t, e, t);
 
-          switch (violation) {
-          | Some(_) as warning => Model.set({...new_state, warning})
-          | None => Model.set(new_state)
-          };
-        | None => warn("Invalid action")
+        switch (violation) {
+        | Some(_) as warning => Model.set({...new_state, warning})
+        | None => Model.set(new_state)
         };
       }) {
       | Hazelnut.Unimplemented => warn("Unimplemented")
@@ -395,10 +386,12 @@ let view =
   let%map body = {
     let%map state = m >>| Model.state;
 
+    let (e, t) = Hazelnut.mark_syn(state.e);
+
     let expression =
       Node.div([
-        Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(state.e)))]),
-        Node.p([Node.textf("%s", string_of_pexp(pexp_of_htyp(state.t)))]),
+        Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(e)))]),
+        Node.p([Node.textf("%s", string_of_pexp(pexp_of_htyp(t)))]),
       ]);
 
     let buttons = {
