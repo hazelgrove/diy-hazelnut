@@ -5,7 +5,7 @@ module Hazelnut = Hazelnut_lib.Hazelnut;
 module TypCtx = Map.Make(String);
 type typctx = Hazelnut.TypCtx.t(Hazelnut.Htyp.t);
 
-let test_st1 = () => {
+let test_syn_step_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = Cursor(EHole);
   let t: Hazelnut.Htyp.t = Hole;
@@ -20,7 +20,7 @@ let test_st1 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast1 = () => {
+let test_ana_step_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = Cursor(EHole);
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Lam("x"));
@@ -30,7 +30,7 @@ let test_ast1 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st2 = () => {
+let test_syn_step_2 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), LArrow(Cursor(Hole), Hole));
@@ -46,7 +46,7 @@ let test_st2 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast2 = () => {
+let test_ana_step_2 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), LArrow(Cursor(Hole), Hole));
@@ -58,7 +58,7 @@ let test_ast2 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st3 = () => {
+let test_syn_step_3 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), LArrow(Cursor(Num), Hole));
@@ -74,7 +74,7 @@ let test_st3 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast3 = () => {
+let test_ana_step_3 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), LArrow(Cursor(Num), Hole));
@@ -86,7 +86,7 @@ let test_ast3 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st4 = () => {
+let test_syn_step_4 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), Cursor(Arrow(Num, Hole)));
@@ -102,7 +102,7 @@ let test_st4 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast4 = () => {
+let test_ana_step_4 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), Cursor(Arrow(Num, Hole)));
@@ -114,7 +114,7 @@ let test_ast4 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st5 = () => {
+let test_syn_step_5 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), RArrow(Num, Cursor(Hole)));
@@ -130,7 +130,7 @@ let test_st5 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast5 = () => {
+let test_ana_step_5 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), RArrow(Num, Cursor(Hole)));
@@ -142,7 +142,7 @@ let test_ast5 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st6 = () => {
+let test_syn_step_6 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), RArrow(Num, Cursor(Num)));
@@ -158,7 +158,7 @@ let test_st6 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast6 = () => {
+let test_ana_step_6 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t =
     RAsc(Lam("x", EHole), RArrow(Num, Cursor(Num)));
@@ -170,7 +170,7 @@ let test_ast6 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st7 = () => {
+let test_syn_step_7 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = RAsc(Lam("x", EHole), Cursor(Arrow(Num, Num)));
   let t: Hazelnut.Htyp.t = Arrow(Num, Num);
@@ -185,7 +185,7 @@ let test_st7 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast7 = () => {
+let test_ana_step_7 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = RAsc(Lam("x", EHole), Cursor(Arrow(Num, Num)));
   let a: Hazelnut.Action.t = Move(Parent);
@@ -196,7 +196,7 @@ let test_ast7 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st8 = () => {
+let test_syn_step_8 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = Cursor(Asc(Lam("x", EHole), Arrow(Num, Num)));
   let t: Hazelnut.Htyp.t = Arrow(Num, Num);
@@ -211,7 +211,7 @@ let test_st8 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast8 = () => {
+let test_ana_step_8 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = Cursor(Asc(Lam("x", EHole), Arrow(Num, Num)));
   let a: Hazelnut.Action.t = Move(Child(One));
@@ -222,7 +222,7 @@ let test_ast8 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st9 = () => {
+let test_syn_step_9 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = LAsc(Cursor(Lam("x", EHole)), Arrow(Num, Num));
   let t: Hazelnut.Htyp.t = Arrow(Num, Num);
@@ -237,7 +237,7 @@ let test_st9 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast9 = () => {
+let test_ana_step_9 = () => {
   let ctx: typctx = TypCtx.empty;
   let ze: Hazelnut.Zexp.t = LAsc(Cursor(Lam("x", EHole)), Arrow(Num, Num));
   let a: Hazelnut.Action.t = Move(Child(One));
@@ -248,7 +248,7 @@ let test_ast9 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st10 = () => {
+let test_syn_step_10 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t = LAsc(Lam("x", Cursor(EHole)), Arrow(Num, Num));
   let t: Hazelnut.Htyp.t = Arrow(Num, Num);
@@ -263,7 +263,7 @@ let test_st10 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast10 = () => {
+let test_ana_step_10 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t = LAsc(Lam("x", Cursor(EHole)), Arrow(Num, Num));
   let a: Hazelnut.Action.t = Construct(Hazelnut.Shape.Var("x"));
@@ -274,7 +274,7 @@ let test_ast10 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st11 = () => {
+let test_syn_step_11 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t =
     LAsc(Lam("x", Cursor(Var("x"))), Arrow(Num, Num));
@@ -290,7 +290,7 @@ let test_st11 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast11 = () => {
+let test_ana_step_11 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t =
     LAsc(Lam("x", Cursor(Var("x"))), Arrow(Num, Num));
@@ -304,7 +304,7 @@ let test_ast11 = () => {
   check(zexp_typ, "same Hazelnut.Zexp.t", given, expected);
 };
 
-let test_st12 = () => {
+let test_syn_step_12 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t =
     LAsc(Lam("x", RPlus(Var("x"), Cursor(EHole))), Arrow(Num, Num));
@@ -320,7 +320,7 @@ let test_st12 = () => {
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
-let test_ast12 = () => {
+let test_ana_step_12 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let ze: Hazelnut.Zexp.t =
     LAsc(Lam("x", RPlus(Var("x"), Cursor(EHole))), Arrow(Num, Num));
@@ -335,28 +335,28 @@ let test_ast12 = () => {
 };
 
 let sample1_tests = [
-  ("test_st1", `Quick, test_st1),
-  ("test_ast1", `Quick, test_ast1),
-  ("test_st2", `Quick, test_st2),
-  ("test_ast2", `Quick, test_ast2),
-  ("test_st3", `Quick, test_st3),
-  ("test_ast3", `Quick, test_ast3),
-  ("test_st4", `Quick, test_st4),
-  ("test_ast4", `Quick, test_ast4),
-  ("test_st5", `Quick, test_st5),
-  ("test_ast5", `Quick, test_ast5),
-  ("test_st6", `Quick, test_st6),
-  ("test_ast6", `Quick, test_ast6),
-  ("test_st7", `Quick, test_st7),
-  ("test_ast7", `Quick, test_ast7),
-  ("test_st8", `Quick, test_st8),
-  ("test_ast8", `Quick, test_ast8),
-  ("test_st9", `Quick, test_st9),
-  ("test_ast9", `Quick, test_ast9),
-  ("test_st10", `Quick, test_st10),
-  ("test_ast10", `Quick, test_ast10),
-  ("test_st11", `Quick, test_st11),
-  ("test_ast11", `Quick, test_ast11),
-  ("test_st12", `Quick, test_st12),
-  ("test_ast12", `Quick, test_st12),
+  ("test_syn_step_1", `Quick, test_syn_step_1),
+  ("test_ana_step_1", `Quick, test_ana_step_1),
+  ("test_syn_step_2", `Quick, test_syn_step_2),
+  ("test_ana_step_2", `Quick, test_ana_step_2),
+  ("test_syn_step_3", `Quick, test_syn_step_3),
+  ("test_ana_step_3", `Quick, test_ana_step_3),
+  ("test_syn_step_4", `Quick, test_syn_step_4),
+  ("test_ana_step_4", `Quick, test_ana_step_4),
+  ("test_syn_step_5", `Quick, test_syn_step_5),
+  ("test_ana_step_5", `Quick, test_ana_step_5),
+  ("test_syn_step_6", `Quick, test_syn_step_6),
+  ("test_ana_step_6", `Quick, test_ana_step_6),
+  ("test_syn_step_7", `Quick, test_syn_step_7),
+  ("test_ana_step_7", `Quick, test_ana_step_7),
+  ("test_syn_step_8", `Quick, test_syn_step_8),
+  ("test_ana_step_8", `Quick, test_ana_step_8),
+  ("test_syn_step_9", `Quick, test_syn_step_9),
+  ("test_ana_step_9", `Quick, test_ana_step_9),
+  ("test_syn_step_10", `Quick, test_syn_step_10),
+  ("test_ana_step_10", `Quick, test_ana_step_10),
+  ("test_syn_step_11", `Quick, test_syn_step_11),
+  ("test_ana_step_11", `Quick, test_ana_step_11),
+  ("test_syn_step_12", `Quick, test_syn_step_12),
+  ("test_ana_step_12", `Quick, test_ana_step_12),
 ];
