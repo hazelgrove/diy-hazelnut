@@ -62,13 +62,13 @@ let test_type_del = () => {
 };
 let test_type_conarr = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t = RAsc(Lit(1), Cursor(Num));
+  let ze: Hazelnut.Zexp.t = RAsc(Lam("x", Lit(1)), Cursor(Num));
   let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Construct(Arrow);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((RAsc(Lit(1), RArrow(Num,Cursor(Hole))), Arrow(Num,Hole)));
+    Some((RAsc(Lam("x", Lit(1)), RArrow(Num,Cursor(Hole))), Arrow(Num,Hole)));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_type_connum = () => {
