@@ -155,64 +155,6 @@ let rec type_consistent = (t1: Htyp.t, t2: Htyp.t): bool => {
   };
 };
 
-// let rec syn = (ctx: typctx, e: Hexp.t): option(Htyp.t) => {
-//   switch (e) {
-//   | Var(name) => TypCtx.find_opt(name, ctx)
-//   | Lam(arg_name, type_asc, body) =>
-//     let* t2 = syn(TypCtx.add(arg_name, type_asc, ctx), body);
-//     Some(Htyp.Arrow(type_asc, t2));
-//   | Ap(func, arg) =>
-//     let* t1 = syn(ctx, func);
-//     let* (t2, t) = matched_arrow_typ(t1);
-//     if (ana(ctx, arg, t2)) {
-//       Some(t);
-//     } else {
-//       None;
-//     };
-//   | Asc(e, t) =>
-//     if (ana(ctx, e, t)) {
-//       Some(t);
-//     } else {
-//       None;
-//     }
-//   | NumLit(_) => Some(Htyp.Num)
-//   | Plus(arg1, arg2) =>
-//     let e1_ana = ana(ctx, arg1, Htyp.Num);
-//     let e2_ana = ana(ctx, arg2, Htyp.Num);
-//     if (e1_ana && e2_ana) {
-//       Some(Htyp.Num);
-//     } else {
-//       None;
-//     };
-//   | EHole => Some(Htyp.Hole)
-//   | Mark(exp, _) =>
-//     switch (syn(ctx, exp)) {
-//     | Some(_) => Some(Htyp.Hole)
-//     | None => None
-//     }
-//   };
-// }
-// and ana = (ctx: typctx, e: Hexp.t, t: Htyp.t): bool => {
-//   switch (e) {
-//   | Lam(var_name, asc, body) =>
-//     let a = matched_arrow_typ(t);
-//     switch (a) {
-//     | Some((t1, t2)) =>
-//       if (type_consistent(t1, asc)) {
-//         ana(TypCtx.add(var_name, asc, ctx), body, t2);
-//       } else {
-//         false;
-//       }
-//     | _ => false
-//     };
-//   | _ =>
-//     switch (syn(ctx, e)) {
-//     | Some(t') => type_consistent(t, t')
-//     | None => false
-//     }
-//   };
-// };
-
 let rec move_typ = (t: Ztyp.t, a: Dir.t): Ztyp.t => {
   switch (t) {
   | Cursor(typ) =>
@@ -372,12 +314,11 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
     | RPlus(h_exp, z_exp) => RPlus(h_exp, exp_action(z_exp, a))
     | LAsc(z_exp, h_typ) => LAsc(exp_action(z_exp, a), h_typ)
     | RAsc(h_exp, z_typ) => RAsc(h_exp, typ_action(z_typ, a))
-    | Mark(_) => failwith("impossible")
+    | Mark(z_exp, mark) => Mark(exp_action(z_exp, a), mark)
     }
   };
 };
 
-// Precondition: e has no marks
 let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   switch (e) {
   | Var(x) =>
@@ -405,7 +346,7 @@ let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
       Num,
     )
   | Asc(e, t) => (Asc(mark_ana(ctx, t, e), t), t)
-  | Mark(_) => failwith("impossible")
+  | Mark(e, _) => mark_syn(ctx, e) // treat mark as non-existent, will be reapplied as necessary
   };
 }
 

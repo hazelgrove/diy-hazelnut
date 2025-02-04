@@ -11,115 +11,114 @@ let test_sasc_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t =
     Asc(Lam("x", Num, Plus(NumLit(1), NumLit(2))), Arrow(Num, Num));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) =
-    Some(Hazelnut.Htyp.Arrow(Num, Num));
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected: Hazelnut.Htyp.t = Hazelnut.Htyp.Arrow(Num, Num);
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_sasc_2 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
-  let he: Hazelnut.Hexp.t = Asc(NEHole(Var("x")), Hole);
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let he: Hazelnut.Hexp.t = Asc(Var("x"), Hole);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Hole;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_svar_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t = Var("x");
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = None;
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hole;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_svar_2 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let he: Hazelnut.Hexp.t = Var("x");
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_sap_1 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Num, Num));
   let he: Hazelnut.Hexp.t = Ap(Var("x"), NumLit(1));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_sap_2 = () => {
   let ctx: typctx =
     TypCtx.singleton("x", Hazelnut.Htyp.Arrow(Arrow(Num, Num), Num));
-  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lam("y", NumLit(1)));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let he: Hazelnut.Hexp.t = Ap(Var("x"), Lam("y",Num, NumLit(1)));
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_snum_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t = NumLit(1);
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_snum_2 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t = NumLit(-1);
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_splus_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t = Plus(NumLit(1), NumLit(-1));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_splus_2 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Num);
   let he: Hazelnut.Hexp.t = Plus(NumLit(1), Var("x"));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Num);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_shole_1 = () => {
   let ctx: typctx = TypCtx.empty;
   let he: Hazelnut.Hexp.t = EHole;
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Hole;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let test_shole_2 = () => {
   let ctx: typctx = TypCtx.singleton("x", Hazelnut.Htyp.Hole);
   let he: Hazelnut.Hexp.t = Var("x");
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Hole;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
-let test_snehole_1 = () => {
+let test_smark_1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let he: Hazelnut.Hexp.t = NEHole(EHole);
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+  let he: Hazelnut.Hexp.t = Mark(Var("x"), Free);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Hole;
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
-let test_snehole_2 = () => {
-  let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Arrow(Num, Num));
-  let he: Hazelnut.Hexp.t = NEHole(Asc(Ap(Var("incr"), NumLit(1)), Num));
-  let given: option(Hazelnut.Htyp.t) = Hazelnut.syn(ctx, he);
-  let expected: option(Hazelnut.Htyp.t) = Some(Hazelnut.Htyp.Hole);
-  check(htyp_typ, "same option(Hazelnut.Htyp.t)", given, expected);
+let test_smark_2 = () => {
+  let ctx: typctx = TypCtx.singleton("incr", Hazelnut.Htyp.Num); // non-arrow for mark
+  let he: Hazelnut.Hexp.t = Mark(Asc(Ap(Var("incr"), NumLit(1)), Num), NonArrowAp);
+  let (_, given): (Hazelnut.Hexp.t, Hazelnut.Htyp.t) = Hazelnut.mark_syn(ctx, he);
+  let expected:(Hazelnut.Htyp.t) = Hazelnut.Htyp.Num; // TODO: expected behavior?
+  check(htyp_typ, "same Hazelnut.Htyp.t", given, expected);
 };
 
 let syn_tests = [
@@ -135,6 +134,6 @@ let syn_tests = [
   ("test_splus_2", `Quick, test_splus_2),
   ("test_shole_1", `Quick, test_shole_1),
   ("test_shole_2", `Quick, test_shole_2),
-  ("test_snehole_1", `Quick, test_snehole_1),
-  ("test_snehole_2", `Quick, test_snehole_2),
+  ("test_smark_1", `Quick, test_smark_1),
+  ("test_smark_2", `Quick, test_smark_2),
 ];
