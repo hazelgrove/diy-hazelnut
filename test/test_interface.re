@@ -8,8 +8,8 @@ let hexp_print = (_: Hazelnut.Hexp.t): string => "hexp";
 
 let hexp_typ = testable(Fmt.using(hexp_print, Fmt.string), hexp_eq);
 
-let htyp_eq =
-    (t1: Hazelnut.Htyp.t, t2: (Hazelnut.Htyp.t)): bool => Hazelnut.Htyp.compare(t1, t2) == 0;
+let htyp_eq = (t1: Hazelnut.Htyp.t, t2: Hazelnut.Htyp.t): bool =>
+  Hazelnut.Htyp.compare(t1, t2) == 0;
 
 let htyp_print = (_: Hazelnut.Htyp.t): string => "htyp";
 
