@@ -1,6 +1,6 @@
+module Hazelnut = Hazelnut_lib.Hazelnut;
 open Alcotest;
 open Test_interface;
-module Hazelnut = Hazelnut_lib.Hazelnut;
 
 let test_eetop_1 = () => {
   let ze: Hazelnut.Zexp.t = Cursor(Var("x"));

@@ -1,6 +1,6 @@
 # diy-hazelnut
 
-A template for you to implement [Hazelnut](https://arxiv.org/pdf/1607.04180) yourself
+A template for you to implement the [Marked Lambda Calculus](https://hazel.org/papers/marking-popl24.pdf) and [Hazelnut](https://arxiv.org/pdf/1607.04180) yourself
 
 ## Setup
 
@@ -8,24 +8,28 @@ A template for you to implement [Hazelnut](https://arxiv.org/pdf/1607.04180) you
 
 You will need to have the OCaml toolchain installed. If you have not already it installed, I recommend the official [Get Up and Running With OCaml](https://ocaml.org/learn/tutorials/up_and_running.html) tutorial.
 
-Once you do that, I recommend you setup an opam switch just for this project. You can think of a switch like an isolated environment to install opam packages. The packages you install in one switch won't interfere with the packages installed in another switch. This project has only been tested against OCaml 4.13.1, so we'll be setting up the switch with that version.
+Once you do that, I recommend you setup an opam switch just for this project. You can think of a switch like an isolated environment to install opam packages. The packages you install in one switch won't interfere with the packages installed in another switch.
 
 To create the switch:
+
 ```sh
-opam switch create diy-hazelnut 5.2.0
+opam switch create diy-hazelnut-marked 5.2.0
 ```
 
 To set this switch as the currently active one:
+
 ```sh
-opam switch set diy-hazelnut
+opam switch set diy-hazelnut-marked
 ```
 
 To list all the switches you have:
+
 ```sh
 opam switch list
 ```
 
 To learn more about switches:
+
 ```sh
 man opam-switch
 ```
@@ -33,11 +37,13 @@ man opam-switch
 ### Installing Dependencies
 
 If you setup a switch for this project, make sure that it's active:
+
 ```sh
-opam switch set diy-hazelnut
+opam switch set diy-hazelnut-marked
 ```
 
 To install the dependencies to the currently active switch:
+
 ```sh
 make deps
 ```
@@ -47,40 +53,48 @@ make deps
 All the build commands are managed by the `Makefile`. You're free to modify it to your own liking, but as it is provided, here's what the commands do:
 
 To autoformat your code:
+
 ```sh
 make fmt
 ```
 
 To build the webapp:
+
 ```sh
 make build
 ```
 
 To autoformat and build:
+
 ```sh
 make
 ```
 
 To get the URL for the webapp:
+
 ```sh
 make url
 ```
 
 To erase the build:
+
 ```sh
 make clean
 ```
 
 To test your implementation:
+
 ```sh
 make test
 ```
 
-## Implementing Hazelnut
+## Implementing Marked Hazelnut
 
-Now it's your turn to implement Hazelnut!
+Now it's your turn to implement marked Hazelnut!
 
 First of all, it's important that you understand what Hazelnut is and how it works. Read *[Hazelnut: A Bidirectionally Typed Structure Editor Calculus][hazelnut_paper]* if you haven't already. You don't have to understand everything right at this moment, but make sure that you have a good overview of how it all works.
+
+Next, check out *[Total Type Error Localization and Recovery with Holes][marked_lambda_calc_paper]* for an introduction to the marked lambda calculus.
 
 You'll be using the Reason programming language, which essentially just OCaml with a more JavaScript-like syntax. It's the primary language used to implement [Hazel](https://github.com/hazelgrove/hazel). If you're already familiar with OCaml, but not Reason, [this website](https://reasonml.github.io/en/try) can be used to translate between OCaml and Reason. But if you'd really just prefer to use OCaml, you can convert code from OCaml to Reason using `refmt` as follows:
 
@@ -155,3 +169,4 @@ To use this monad syntax, uncomment `open Monad_lib.Monad;` at the top of the fi
 <!-- Link aliases -->
 
 [hazelnut_paper]: https://arxiv.org/pdf/1607.04180
+[marked_lambda_calc_paper]: https://hazel.org/papers/marking-popl24.pdf
