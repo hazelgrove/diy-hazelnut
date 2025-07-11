@@ -93,7 +93,7 @@ python3 -m http.server 8000
 
 Paste this in your browser:
 ```
-http://localhost:8000/
+http://localhost:8000/_build/default/bin/index.html
 ```
 
 ## Implementing Hazelnut
