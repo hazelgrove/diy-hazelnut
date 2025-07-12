@@ -62,8 +62,7 @@ module Child = {
   [@deriving (sexp, compare)]
   type t =
     | One
-    | Two
-    | Three;
+    | Two;
 };
 
 module Dir = {
@@ -130,19 +129,6 @@ let matched_arrow_typ = (t: Htyp.t): option((Htyp.t, Htyp.t)) => {
   | _ => None
   };
 };
-
-// let rec type_meet = (t1: Htyp.t, t2: Htyp.t): option(Htyp.t) => {
-//   switch (t1, t2) {
-//   | (Hole, _) => Some(t2)
-//   | (_, Hole) => Some(t1)
-//   | (Num, Num) => Some(Num)
-//   | (Arrow(t11, t12), Arrow(t21, t22)) =>
-//     let* t1 = type_meet(t11, t21);
-//     let* t2 = type_meet(t12, t22);
-//     Some(Htyp.Arrow(t1, t2));
-//   | _ => None
-//   };
-// };
 
 let rec type_consistent = (t1: Htyp.t, t2: Htyp.t): bool => {
   switch (t1, t2) {
@@ -274,7 +260,6 @@ let rec typ_action = (t: Ztyp.t, a: Action.t): Ztyp.t => {
   };
 };
 
-// Precondition: e has no marks
 let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
   switch (a) {
   | Move(dir) => move_action(e, dir)
@@ -282,7 +267,6 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
     switch (e) {
     | Cursor(h_exp) =>
       switch (a) {
-      | Move(_) => failwith("impossible")
       | Construct(Arrow)
       | Construct(Num) => e
       | Construct(Var(name)) =>
@@ -304,6 +288,7 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
         }
       | Construct(Plus) => RPlus(h_exp, Cursor(EHole))
       | Del => Cursor(EHole)
+      | _ => failwith("impossible")
       }
     // zipper cases
     | LAp(z_exp, h_exp) => LAp(exp_action(z_exp, a), h_exp)
@@ -322,6 +307,7 @@ let rec exp_action = (e: Zexp.t, a: Action.t): Zexp.t => {
 let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   switch (e) {
   | Var(x) =>
+    // if x is not in ctx, then it is free, and thus we insert a mark
     switch (TypCtx.find_opt(x, ctx)) {
     | None => (Mark(e, Free), Hole)
     | Some(t) => (e, t)
@@ -350,7 +336,6 @@ let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   };
 }
 
-// Precondition: e has no marks
 and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
   let subsume = (e): Hexp.t => {
     let (e', t') = mark_syn(ctx, e);
@@ -376,7 +361,6 @@ and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
   };
 };
 
-// Precondition: z has no marks
 let rec fold_zexp_mexp = (z: Zexp.t, e: Hexp.t): Zexp.t => {
   switch (z, e) {
   | (Cursor(_), e) => Cursor(e)

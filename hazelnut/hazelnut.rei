@@ -55,8 +55,7 @@ module Child: {
   [@deriving (sexp, compare)]
   type t =
     | One
-    | Two
-    | Three;
+    | Two;
 };
 
 module Dir: {
