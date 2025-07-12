@@ -94,7 +94,7 @@ Now it's your turn to implement marked Hazelnut!
 
 First of all, it's important that you understand what Hazelnut is and how it works. Read *[Hazelnut: A Bidirectionally Typed Structure Editor Calculus][hazelnut_paper]* if you haven't already. You don't have to understand everything right at this moment, but make sure that you have a good overview of how it all works.
 
-Next, check out *[Total Type Error Localization and Recovery with Holes][marked_lambda_calc_paper]* for an introduction to the marked lambda calculus.
+Next, check out *[Total Type Error Localization and Recovery with Holes][marked_lambda_calc_paper]* for an introduction to the marked lambda calculus. Once again, you don't need to understand every aspect of the paper, but understand the core concepts that differentiate it from Hazelnut, specifically the markings.
 
 You'll be using the Reason programming language, which essentially just OCaml with a more JavaScript-like syntax. It's the primary language used to implement [Hazel](https://github.com/hazelgrove/hazel). If you're already familiar with OCaml, but not Reason, [this website](https://reasonml.github.io/en/try) can be used to translate between OCaml and Reason. But if you'd really just prefer to use OCaml, you can convert code from OCaml to Reason using `refmt` as follows:
 
@@ -104,17 +104,17 @@ All the code you will write should go in the [`hazelnut/hazelnut.re`](hazelnut/h
 
 To implement Hazelnut, you will need to complete the following functions:
 
-| Function     | Description                                                                                                                       |
-| :----------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| `erase_exp`  | Performs *cursor erasure* described in [Hazelnut Part 3.2][hazelnut_paper].                                                       |
-| `syn`        | Performs *synthesis* described in [Hazelnut Part 3.1][hazelnut_paper]. Returns `None` if the expression cannot sythesize a type.  |
-| `syn_action` | Performs a *synthetic action* described in [Hazelnut Part 3.3][hazelnut_paper]. Returns `None` if the action cannot be performed. |
+| Function      | Description                                                                                                                       |
+| :------------ | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `erase_exp`   | Performs *cursor erasure* described in [Hazelnut Part 3.2][hazelnut_paper].                                                       |
+| `mark_syn`    | Performs *synthesis* described in [Hazelnut Part 3.1][hazelnut_paper], with `Mark` expressions replacing `NEHole` terms as described in [Zhao et al. Part 2.1][marked_lambda_calc_paper].    |
+| `mark_action` | Performs a *synthetic action* described in [Hazelnut Part 3.3][hazelnut_paper]. Returns `None` if the action cannot be performed. |
+
+For variable contexts, a new type, `typctx`, has been provided for you. A `typctx` is a map from variable names to types. You can insert/update values with `TypCtx.add`, and read values with `TypCtx.find`. See the [OCaml Map documentation](https://v2.ocaml.org/api/Map.Make.html) for more details.
 
 You are not just welcomed, but encouraged to write your own helper functions.
 
 To test out your implementation while it's incomplete, you can use `raise(Unimplemented)` to fill the gaps. The webapp will warn you if it ever reaches an unimplemented part, but it won't crash!
-
-A `typctx` is a map from variable names to types. You can insert/update values with `TypCtx.add`, and read values with `TypCtx.find`. See the [OCaml Map documentation](https://v2.ocaml.org/api/Map.Make.html) for more details.
 
 ## Using the Webapp
 
@@ -126,11 +126,10 @@ If anything unexpected happens, a warning will appear at the bottom. Here's what
 
 | Warning           | Meaning                                                                                                                                                |
 | :---------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Invalid action    | According to your implementation, that action cannot performed on the current expression.                                                              |
-| Invalid input     | The provided input isn't valid.                                                                                                                        |
-| Unimplemented     | You called upon an operation that you haven't implemented yet.                                                                                         |
+| Invalid action    | According to your implementation, that action cannot performed on the current expression. |
+| Invalid input     | The provided input isn't valid. |
+| Unimplemented     | You called upon an operation that you haven't implemented yet. |
 | Theorem violation | Your implementation has a bug that caused it to violate a Hazelnut metatheorem. Note: This won't catch every metatheorem violation, only some of them. |
-
 
 ## Using the Maybe Monad
 

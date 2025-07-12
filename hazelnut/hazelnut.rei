@@ -95,8 +95,6 @@ type typctx = TypCtx.t(Htyp.t);
 exception Unimplemented;
 
 let erase_exp: Zexp.t => Hexp.t;
-// let syn: (typctx, Hexp.t) => option(Htyp.t);
-// let ana: (typctx, Hexp.t, Htyp.t) => bool;
-let exp_action: (Zexp.t, Action.t) => Zexp.t;
+let syn_action: (Zexp.t, Action.t) => Zexp.t;
 let mark_syn: (typctx, Hexp.t) => (Hexp.t, Htyp.t);
 let fold_zexp_mexp: (Zexp.t, Hexp.t) => Zexp.t;
