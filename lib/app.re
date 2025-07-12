@@ -214,7 +214,7 @@ let apply_action =
     switch (action) {
     | HazelnutAction(action) =>
       try({
-        let e = Hazelnut.exp_action(state.e, action);
+        let e = Hazelnut.syn_action(state.e, action);
 
         let new_state = {
           ...state,
