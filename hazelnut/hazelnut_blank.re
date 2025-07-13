@@ -1,4 +1,11 @@
-module Htyp: {
+open Sexplib.Std;
+// open Monad_lib.Monad; // Uncomment this line to use the maybe monad
+
+let compare_string = String.compare;
+let compare_int = Int.compare;
+// let compare_bool = Bool.compare;
+
+module Htyp = {
   [@deriving (sexp, compare)]
   type t =
     | Arrow(t, t)
@@ -6,7 +13,7 @@ module Htyp: {
     | Hole;
 };
 
-module Ztyp: {
+module Ztyp = {
   [@deriving (sexp, compare)]
   type t =
     | Cursor(Htyp.t)
@@ -14,7 +21,7 @@ module Ztyp: {
     | RArrow(Htyp.t, t);
 };
 
-module Mark: {
+module Mark = {
   [@deriving (sexp, compare)]
   type t =
     | Free
@@ -23,7 +30,7 @@ module Mark: {
     | Inconsistent;
 };
 
-module Hexp: {
+module Hexp = {
   [@deriving (sexp, compare)]
   type t =
     | Var(string) // x
@@ -36,7 +43,7 @@ module Hexp: {
     | Mark(t, Mark.t); // mark
 };
 
-module Zexp: {
+module Zexp = {
   [@deriving (sexp, compare)]
   type t =
     | Cursor(Hexp.t)
@@ -51,21 +58,21 @@ module Zexp: {
     | Mark(t, Mark.t);
 };
 
-module Child: {
+module Child = {
   [@deriving (sexp, compare)]
   type t =
     | One
     | Two;
 };
 
-module Dir: {
+module Dir = {
   [@deriving (sexp, compare)]
   type t =
     | Child(Child.t)
     | Parent;
 };
 
-module Shape: {
+module Shape = {
   [@deriving (sexp, compare)]
   type t =
     | Arrow
@@ -78,7 +85,7 @@ module Shape: {
     | Ap;
 };
 
-module Action: {
+module Action = {
   [@deriving (sexp, compare)]
   type t =
     | Move(Dir.t)
@@ -86,14 +93,43 @@ module Action: {
     | Del;
 };
 
-module TypCtx: {
-  type t('a) = Map.Make(String).t('a);
-  let empty: t('a);
-};
+module TypCtx = Map.Make(String);
 type typctx = TypCtx.t(Htyp.t);
 
 exception Unimplemented;
 
-let erase_exp: Zexp.t => Hexp.t;
-let perform_action: (Zexp.t, Action.t) => Zexp.t;
-let mark_syn: (typctx, Hexp.t) => (Hexp.t, Htyp.t);
+let erase_exp = (e: Zexp.t): Hexp.t => {
+  // Used to suppress unused variable warnings
+  // Okay to remove
+  let _ = e;
+
+  raise(Unimplemented);
+};
+
+let mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
+  // Used to suppress unused variable warnins
+  // Okay to remove
+  let _ = ctx;
+  let _ = e;
+
+  raise(Unimplemented);
+}
+
+and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
+  // Used to suppress unused variable warnings
+  // Okay to remove
+  let _ = ctx;
+  let _ = e;
+  let _ = t;
+
+  raise(Unimplemented);
+};
+
+let perform_action = (e: Zexp.t, a: Action.t): Zexp.t => {
+  // Used to suppress unused variable warnings
+  // Okay to remove
+  let _ = e;
+  let _ = a;
+
+  raise(Unimplemented);
+};

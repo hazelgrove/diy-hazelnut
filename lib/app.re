@@ -62,6 +62,23 @@ let rec pexp_of_zexp: Hazelnut.Zexp.t => Pexp.t =
   | RAsc(e, t) => Asc(pexp_of_hexp(e), pexp_of_ztyp(t))
   | Mark(e, m) => MarkHole(pexp_of_zexp(e), string_of_mark(m));
 
+let rec fold_zexp_mexp =
+        (z: Hazelnut.Zexp.t, e: Hazelnut.Hexp.t): Hazelnut.Zexp.t => {
+  switch (z, e) {
+  | (Cursor(_), e) => Cursor(e)
+  | (z, Mark(e, m)) => Mark(fold_zexp_mexp(z, e), m)
+  | (LAp(z, _), Ap(e, e2)) => LAp(fold_zexp_mexp(z, e), e2)
+  | (RAp(_, z), Ap(e1, e)) => RAp(e1, fold_zexp_mexp(z, e))
+  | (LAsc(z, _), Asc(e, t)) => LAsc(fold_zexp_mexp(z, e), t)
+  | (RAsc(_, z), Asc(e, _)) => RAsc(e, z)
+  | (LLam(_, z, _), Lam(x, _, e)) => LLam(x, z, e)
+  | (RLam(_, _, z), Lam(x, t, e)) => RLam(x, t, fold_zexp_mexp(z, e))
+  | (LPlus(z, _), Plus(e, e2)) => LPlus(fold_zexp_mexp(z, e), e2)
+  | (RPlus(_, z), Plus(e1, e)) => RPlus(e1, fold_zexp_mexp(z, e))
+  | (_, _) => failwith("inconsistent fold")
+  };
+};
+
 // Lower is tighter
 let rec prec: Pexp.t => int =
   fun
@@ -147,7 +164,7 @@ and paren = (inner: Pexp.t, outer: Pexp.t, side: Side.t): string => {
 [@deriving (sexp, fields, compare)]
 type state = {
   e: Hazelnut.Zexp.t,
-  // t: Hazelnut.Htyp.t,
+  t: Hazelnut.Htyp.t,
   warning: option(string),
   var_input: string,
   lam_input: string,
@@ -165,7 +182,7 @@ module Model = {
   let init = (): t =>
     set({
       e: Cursor(EHole),
-      // t: Hole,
+      t: Hole,
       warning: None,
       var_input: "",
       lam_input: "",
@@ -214,7 +231,7 @@ let apply_action =
     switch (action) {
     | HazelnutAction(action) =>
       try({
-        let e = Hazelnut.syn_action(state.e, action);
+        let e = Hazelnut.perform_action(state.e, action);
 
         let new_state = {
           ...state,
@@ -280,7 +297,7 @@ let view =
     let (e_marked, t) =
       Hazelnut.mark_syn(Hazelnut.TypCtx.empty, e_no_cursor);
 
-    let e_folded = Hazelnut.fold_zexp_mexp(e_cursor, e_marked);
+    let e_folded = fold_zexp_mexp(e_cursor, e_marked);
 
     let expression =
       Node.div([

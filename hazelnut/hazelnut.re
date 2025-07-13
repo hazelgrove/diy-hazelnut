@@ -234,7 +234,8 @@ let rec move_action = (e: Zexp.t, a: Dir.t): Zexp.t => {
   };
 };
 
-let rec typ_action = (t: Ztyp.t, a: Action.t): Ztyp.t => {
+// Perform action on a type
+let rec perform_typ_action = (t: Ztyp.t, a: Action.t): Ztyp.t => {
   switch (a) {
   | Move(dir) => move_typ(t, dir)
   | _ =>
@@ -251,16 +252,16 @@ let rec typ_action = (t: Ztyp.t, a: Action.t): Ztyp.t => {
       | Move(_) => t // this cant happen
       }
     | LArrow(zt, t) =>
-      let zt' = typ_action(zt, a);
+      let zt' = perform_typ_action(zt, a);
       LArrow(zt', t);
     | RArrow(t, zt) =>
-      let zt' = typ_action(zt, a);
+      let zt' = perform_typ_action(zt, a);
       RArrow(t, zt');
     }
   };
 };
 
-let rec syn_action = (e: Zexp.t, a: Action.t): Zexp.t => {
+let rec perform_action = (e: Zexp.t, a: Action.t): Zexp.t => {
   switch (a) {
   | Move(dir) => move_action(e, dir)
   | _ =>
@@ -268,7 +269,7 @@ let rec syn_action = (e: Zexp.t, a: Action.t): Zexp.t => {
     | Cursor(h_exp) =>
       switch (a) {
       | Construct(Arrow)
-      | Construct(Num) => e
+      | Construct(Num) => e // these are no-ops, as we ignore type construction here
       | Construct(Var(name)) =>
         switch (h_exp) {
         | EHole => Cursor(Var(name))
@@ -291,15 +292,15 @@ let rec syn_action = (e: Zexp.t, a: Action.t): Zexp.t => {
       | _ => failwith("impossible")
       }
     // zipper cases
-    | LAp(z_exp, h_exp) => LAp(syn_action(z_exp, a), h_exp)
-    | RAp(h_exp, z_exp) => RAp(h_exp, syn_action(z_exp, a))
-    | LLam(x, z_typ, h_exp) => LLam(x, typ_action(z_typ, a), h_exp)
-    | RLam(x, h_typ, z_exp) => RLam(x, h_typ, syn_action(z_exp, a))
-    | LPlus(z_exp, h_exp) => LPlus(syn_action(z_exp, a), h_exp)
-    | RPlus(h_exp, z_exp) => RPlus(h_exp, syn_action(z_exp, a))
-    | LAsc(z_exp, h_typ) => LAsc(syn_action(z_exp, a), h_typ)
-    | RAsc(h_exp, z_typ) => RAsc(h_exp, typ_action(z_typ, a))
-    | Mark(z_exp, mark) => Mark(syn_action(z_exp, a), mark)
+    | LAp(z_exp, h_exp) => LAp(perform_action(z_exp, a), h_exp)
+    | RAp(h_exp, z_exp) => RAp(h_exp, perform_action(z_exp, a))
+    | LLam(x, z_typ, h_exp) => LLam(x, perform_typ_action(z_typ, a), h_exp)
+    | RLam(x, h_typ, z_exp) => RLam(x, h_typ, perform_action(z_exp, a))
+    | LPlus(z_exp, h_exp) => LPlus(perform_action(z_exp, a), h_exp)
+    | RPlus(h_exp, z_exp) => RPlus(h_exp, perform_action(z_exp, a))
+    | LAsc(z_exp, h_typ) => LAsc(perform_action(z_exp, a), h_typ)
+    | RAsc(h_exp, z_typ) => RAsc(h_exp, perform_typ_action(z_typ, a))
+    | Mark(z_exp, mark) => Mark(perform_action(z_exp, a), mark)
     }
   };
 };
@@ -335,7 +336,6 @@ let rec mark_syn = (ctx: typctx, e: Hexp.t): (Hexp.t, Htyp.t) => {
   | Mark(e, _) => mark_syn(ctx, e) // treat mark as non-existent, will be reapplied as necessary
   };
 }
-
 and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
   let subsume = (e): Hexp.t => {
     let (e', t') = mark_syn(ctx, e);
@@ -358,21 +358,5 @@ and mark_ana = (ctx: typctx, t: Htyp.t, e: Hexp.t): Hexp.t => {
       };
     }
   | _ => subsume(e)
-  };
-};
-
-let rec fold_zexp_mexp = (z: Zexp.t, e: Hexp.t): Zexp.t => {
-  switch (z, e) {
-  | (Cursor(_), e) => Cursor(e)
-  | (z, Mark(e, m)) => Mark(fold_zexp_mexp(z, e), m)
-  | (LAp(z, _), Ap(e, e2)) => LAp(fold_zexp_mexp(z, e), e2)
-  | (RAp(_, z), Ap(e1, e)) => RAp(e1, fold_zexp_mexp(z, e))
-  | (LAsc(z, _), Asc(e, t)) => LAsc(fold_zexp_mexp(z, e), t)
-  | (RAsc(_, z), Asc(e, _)) => RAsc(e, z)
-  | (LLam(_, z, _), Lam(x, _, e)) => LLam(x, z, e)
-  | (RLam(_, _, z), Lam(x, t, e)) => RLam(x, t, fold_zexp_mexp(z, e))
-  | (LPlus(z, _), Plus(e, e2)) => LPlus(fold_zexp_mexp(z, e), e2)
-  | (RPlus(_, z), Plus(e1, e)) => RPlus(e1, fold_zexp_mexp(z, e))
-  | (_, _) => failwith("inconsistent fold")
   };
 };
