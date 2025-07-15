@@ -76,6 +76,26 @@ To test your implementation:
 make test
 ```
 
+<br>
+
+If the URL for the webapp created by running `make url` doesn't work, you can run a local Python server. Make sure you have Python 3 installed, then, from the root (~/diy-hazelnut) run the following commands:
+
+If you already ran `make build` or `make`:
+```sh
+make clean
+dune build bin/main.bc.js bin/index.html
+```
+
+To start a local web server:
+```sh
+python3 -m http.server 8000
+```
+
+Paste this in your browser:
+```
+http://localhost:8000/_build/default/bin/index.html
+```
+
 ## Implementing Hazelnut
 
 Now it's your turn to implement Hazelnut!
