@@ -13,7 +13,7 @@ let test_samove_asc1 = () => {
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((LAsc(Cursor(Lit(1)), Num),Num));
+    Some((LAsc(Cursor(Lit(1)), Num), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_asc2 = () => {
@@ -24,7 +24,7 @@ let test_samove_asc2 = () => {
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((RAsc(Lit(1), Cursor(Num)),Num));
+    Some((RAsc(Lit(1), Cursor(Num)), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_asc3 = () => {
@@ -81,156 +81,115 @@ let test_samove_lam2 = () => {
 };
 let test_samove_plus1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    Cursor(Plus(Lit(1),Lit(2)));
+  let ze: Hazelnut.Zexp.t = Cursor(Plus(Lit(1), Lit(2)));
   let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Child(One));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      LPlus(Cursor(Lit(1)), Lit(2)),
-      Num,
-    ));
+    Some((LPlus(Cursor(Lit(1)), Lit(2)), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_plus2 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    Cursor(Plus(Lit(1),Lit(2)));
+  let ze: Hazelnut.Zexp.t = Cursor(Plus(Lit(1), Lit(2)));
   let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Child(Two));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      RPlus(Lit(1), Cursor(Lit(2))),
-      Num,
-    ));
+    Some((RPlus(Lit(1), Cursor(Lit(2))), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_plus3 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    LPlus(Cursor(Lit(1)), Lit(2));
+  let ze: Hazelnut.Zexp.t = LPlus(Cursor(Lit(1)), Lit(2));
   let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      Cursor(Plus(Lit(1),Lit(2))),
-      Num,
-    ));
+    Some((Cursor(Plus(Lit(1), Lit(2))), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_plus4 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    RPlus(Lit(1), Cursor(Lit(2)));
+  let ze: Hazelnut.Zexp.t = RPlus(Lit(1), Cursor(Lit(2)));
   let t: Hazelnut.Htyp.t = Num;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      Cursor(Plus(Lit(1),Lit(2))),
-      Num,
-    ));
+    Some((Cursor(Plus(Lit(1), Lit(2))), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_ap1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    Cursor(Ap(Lam("x", EHole), EHole));
+  let ze: Hazelnut.Zexp.t = Cursor(Ap(Lam("x", EHole), EHole));
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Child(One));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      LAp(Cursor(Lam("x", EHole)), EHole),
-      Hole,
-    ));
+    Some((LAp(Cursor(Lam("x", EHole)), EHole), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_ap2 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    Cursor(Ap(Lam("x", EHole), EHole));
+  let ze: Hazelnut.Zexp.t = Cursor(Ap(Lam("x", EHole), EHole));
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Child(Two));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      RAp(Lam("x", EHole), Cursor(EHole)),
-      Hole,
-    ));
+    Some((RAp(Lam("x", EHole), Cursor(EHole)), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_ap3 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    LAp(Cursor(Lam("x", EHole)), EHole);
+  let ze: Hazelnut.Zexp.t = LAp(Cursor(Lam("x", EHole)), EHole);
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      Cursor(Ap(Lam("x", EHole), EHole)),
-      Hole,
-    ));
+    Some((Cursor(Ap(Lam("x", EHole), EHole)), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_ap4 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    RAp(Lam("x", EHole), Cursor(EHole));
+  let ze: Hazelnut.Zexp.t = RAp(Lam("x", EHole), Cursor(EHole));
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      Cursor(Ap(Lam("x", EHole), EHole)),
-      Hole,
-    ));
+    Some((Cursor(Ap(Lam("x", EHole), EHole)), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_neh1 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    Cursor(NEHole(Lit(1)));
+  let ze: Hazelnut.Zexp.t = Cursor(NEHole(Lit(1)));
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Child(One));
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      NEHole(Cursor(Lit(1))),
-      Hole,
-    ));
+    Some((NEHole(Cursor(Lit(1))), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 let test_samove_neh2 = () => {
   let ctx: typctx = TypCtx.empty;
-  let ze: Hazelnut.Zexp.t =
-    NEHole(Cursor(Lit(1)));
+  let ze: Hazelnut.Zexp.t = NEHole(Cursor(Lit(1)));
   let t: Hazelnut.Htyp.t = Hole;
   let a: Hazelnut.Action.t = Move(Parent);
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      (Cursor(NEHole(Lit(1)))),
-      Hole,
-    ));
+    Some((Cursor(NEHole(Lit(1))), Hole));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
-// MOVE TESTS COMPLETE 
-
+// MOVE TESTS COMPLETE
 
 let test_sadel_1 = () => {
   let ctx: typctx = TypCtx.empty;

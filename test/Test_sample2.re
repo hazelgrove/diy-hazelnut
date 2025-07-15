@@ -58,10 +58,7 @@ let test_st16 = () => {
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      RAp(Var("incr"), NEHole(Cursor(Var("incr")))),
-      Num,
-    ));
+    Some((RAp(Var("incr"), NEHole(Cursor(Var("incr")))), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
@@ -195,10 +192,7 @@ let test_st21 = () => {
   let given: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
     Hazelnut.syn_action(ctx, (ze, t), a);
   let expected: option((Hazelnut.Zexp.t, Hazelnut.Htyp.t)) =
-    Some((
-      RAp(Var("incr"), Cursor(Ap(Var("incr"), Lit(3)))),
-      Num,
-    ));
+    Some((RAp(Var("incr"), Cursor(Ap(Var("incr"), Lit(3)))), Num));
   check(zexp_htyp, "same option(Hazelnut.Zexp.t)", given, expected);
 };
 
