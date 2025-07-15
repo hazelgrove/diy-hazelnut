@@ -19,7 +19,7 @@ clean:
 	dune clean
 
 deps:
-	opam install dune reason incr_dom ocaml-lsp-server ppx_deriving
+	opam install dune reason incr_dom ocaml-lsp-server alcotest ppx_deriving
 
 test:
 	dune test
