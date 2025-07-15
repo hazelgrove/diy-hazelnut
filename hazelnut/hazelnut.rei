@@ -1,5 +1,5 @@
 module Htyp: {
-  [@deriving (sexp, compare)]
+  [@deriving (sexp, compare, show({with_path: false}))]
   type t =
     | Arrow(t, t)
     | Num
@@ -7,7 +7,7 @@ module Htyp: {
 };
 
 module Hexp: {
-  [@deriving (sexp, compare)]
+  [@deriving (sexp, compare, show({with_path: false}))]
   type t =
     | Var(string)
     | Lam(string, t)
@@ -20,7 +20,7 @@ module Hexp: {
 };
 
 module Ztyp: {
-  [@deriving (sexp, compare)]
+  [@deriving (sexp, compare, show({with_path: false}))]
   type t =
     | Cursor(Htyp.t)
     | LArrow(t, Htyp.t)
@@ -28,7 +28,7 @@ module Ztyp: {
 };
 
 module Zexp: {
-  [@deriving (sexp, compare)]
+  [@deriving (sexp, compare, show({with_path: false}))]
   type t =
     | Cursor(Hexp.t)
     | Lam(string, t)
