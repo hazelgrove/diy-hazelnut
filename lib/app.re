@@ -232,7 +232,10 @@ let apply_action =
     let state = model.state;
 
     let warn = (warning: string): Model.t =>
-      Model.set({...state, warning: Some(warning)});
+      Model.set({
+        ...state,
+        warning: Some(warning),
+      });
 
     switch (action) {
     | HazelnutAction(action) =>
@@ -246,13 +249,22 @@ let apply_action =
 
         switch (result) {
         | Some((e, t)) =>
-          let new_state = {...state, e, t, warning: None};
+          let new_state = {
+            ...state,
+            e,
+            t,
+            warning: None,
+          };
 
           let violation =
             check_for_theorem_violation(action, state.e, state.t, e, t);
 
           switch (violation) {
-          | Some(_) as warning => Model.set({...new_state, warning})
+          | Some(_) as warning =>
+            Model.set({
+              ...new_state,
+              warning,
+            })
           | None => Model.set(new_state)
           };
         | None => warn("Invalid action")
@@ -260,10 +272,26 @@ let apply_action =
       }) {
       | Hazelnut.Unimplemented => warn("Unimplemented")
       }
-    | UpdateInput(Var, var_input) => Model.set({...state, var_input})
-    | UpdateInput(Lam, lam_input) => Model.set({...state, lam_input})
-    | UpdateInput(Lit, lit_input) => Model.set({...state, lit_input})
-    | ShowWarning(warning) => Model.set({...state, warning: Some(warning)})
+    | UpdateInput(Var, var_input) =>
+      Model.set({
+        ...state,
+        var_input,
+      })
+    | UpdateInput(Lam, lam_input) =>
+      Model.set({
+        ...state,
+        lam_input,
+      })
+    | UpdateInput(Lit, lit_input) =>
+      Model.set({
+        ...state,
+        lit_input,
+      })
+    | ShowWarning(warning) =>
+      Model.set({
+        ...state,
+        warning: Some(warning),
+      })
     };
   };
 
