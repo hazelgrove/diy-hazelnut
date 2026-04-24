@@ -49,6 +49,7 @@ let zexp_htyp_eq =
   switch (ze_t1, ze_t2) {
   | (Some((e1, t1)), Some((e2, t2))) =>
     Hazelnut.Zexp.compare(e1, e2) == 0 && Hazelnut.Htyp.compare(t1, t2) == 0
+  | (None, None) => true
   | _ => false
   };
 
