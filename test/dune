@@ -1,4 +1,4 @@
 (test
  (name hazelnut_test)
- (libraries hazelnut_lib alcotest))
+ (libraries hazelnut_lib alcotest qcheck-core qcheck-alcotest))
  

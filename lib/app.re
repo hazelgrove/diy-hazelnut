@@ -128,6 +128,12 @@ and paren = (inner: Pexp.t, outer: Pexp.t, side: Side.t): string => {
   };
 };
 
+let string_of_htyp = (t: Hazelnut.Htyp.t): string =>
+  string_of_pexp(pexp_of_htyp(t));
+
+let string_of_hexp = (e: Hazelnut.Hexp.t): string =>
+  string_of_pexp(pexp_of_hexp(e));
+
 let check_for_theorem_violation =
     (
       a: Hazelnut.Action.t,
@@ -138,32 +144,65 @@ let check_for_theorem_violation =
     )
     : option(string) =>
   try({
-    let e = Hazelnut.erase_exp(e);
-    let e' = Hazelnut.erase_exp(e');
+    let he = Hazelnut.erase_exp(e);
+    let he' = Hazelnut.erase_exp(e');
 
-    let theorem_1 = {
-      let warning = Some("Theorem 1 violation (Action sensibility)");
-
-      switch (Hazelnut.syn(Hazelnut.TypCtx.empty, e')) {
+    let theorem_1 =
+      switch (Hazelnut.syn(Hazelnut.TypCtx.empty, he')) {
       | Some(syn_t') =>
         if (Hazelnut.Htyp.compare(t', syn_t') == 0) {
           None;
         } else {
-          warning;
+          Some(
+            "Theorem 1 violation (Action sensibility): "
+            ++ "syn_action returned type "
+            ++ string_of_htyp(t')
+            ++ " but erased result synthesizes "
+            ++ string_of_htyp(syn_t'),
+          );
         }
-      | None => warning
+      | None =>
+        Some(
+          "Theorem 1 violation (Action sensibility): "
+          ++ "erased result "
+          ++ string_of_hexp(he')
+          ++ " fails to synthesize any type, "
+          ++ "but syn_action claims type "
+          ++ string_of_htyp(t'),
+        )
       };
-    };
 
     let theorem_2 =
       switch (a) {
       | Move(_) =>
-        if (Hazelnut.Hexp.compare(e, e') == 0
-            && Hazelnut.Htyp.compare(t, t') == 0) {
+        let erasure_ok = Hazelnut.Hexp.compare(he, he') == 0;
+        let type_ok = Hazelnut.Htyp.compare(t, t') == 0;
+        if (erasure_ok && type_ok) {
           None;
         } else {
-          Some("Theorem 2 violation (movement erasure invariance)");
-        }
+          let detail =
+            if (!erasure_ok && !type_ok) {
+              "erasure changed from "
+              ++ string_of_hexp(he)
+              ++ " to "
+              ++ string_of_hexp(he')
+              ++ " and type changed from "
+              ++ string_of_htyp(t)
+              ++ " to "
+              ++ string_of_htyp(t');
+            } else if (!erasure_ok) {
+              "erasure changed from "
+              ++ string_of_hexp(he)
+              ++ " to "
+              ++ string_of_hexp(he');
+            } else {
+              "type changed from "
+              ++ string_of_htyp(t)
+              ++ " to "
+              ++ string_of_htyp(t');
+            };
+          Some("Theorem 2 violation (Movement erasure invariance): " ++ detail);
+        };
       | _ => None
       };
 
@@ -309,11 +348,40 @@ let view =
   let%map body = {
     let%map state = m >>| Model.state;
 
+    let cursor_erasure =
+      try(
+        Some(
+          Node.p(
+            ~attrs=[
+              Attr.style(
+                Css_gen.create(~field="color", ~value="#666")
+              ),
+            ],
+            [
+              Node.textf(
+                "erased: %s",
+                string_of_pexp(pexp_of_hexp(Hazelnut.erase_exp(state.e))),
+              ),
+            ],
+          ),
+        )
+      ) {
+      | Hazelnut.Unimplemented => None
+      };
+
     let expression =
-      Node.div([
-        Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(state.e)))]),
-        Node.p([Node.textf("%s", string_of_pexp(pexp_of_htyp(state.t)))]),
-      ]);
+      Node.div(
+        [
+          Node.p([Node.textf("%s", string_of_pexp(pexp_of_zexp(state.e)))]),
+          Node.p([Node.textf("%s", string_of_pexp(pexp_of_htyp(state.t)))]),
+        ]
+        @ (
+          switch (cursor_erasure) {
+          | Some(node) => [node]
+          | None => []
+          }
+        ),
+      );
 
     let buttons = {
       let button =
